@@ -1,5 +1,13 @@
 'use strict';
 
+/**
+  * Depends on:
+  * - lodash [bower_components/lodash/lodash.js]
+  * - pretender [bower_components/pretender/pretender.js]
+  * - FakeXMLHttpRequest [bower_components/FakeXMLHttpRequest/fake_xml_http_request.js]
+  * - route-recognizer [bower_components/route-recognizer/dist/route-recognizer.js]
+  */
+
 var Stubby = function() {
   this.stubs = {};
   this.pretender = new window.Pretender();

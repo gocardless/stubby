@@ -225,7 +225,7 @@ describe('stubbing a POST url', function() {
       method: 'POST'
     }).respondWith(200, { a: 1 });
 
-    window.post('/foo', {}, function(xhr) {
+    window.post('/foo', function(xhr) {
       expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
       done();
     });
@@ -238,7 +238,7 @@ describe('stubbing a POST url', function() {
       method: 'POST'
     }).respondWith(200, { a: 1 });
 
-    window.post('/foo', { b: 2 }, function(xhr) {
+    window.post({ url: '/foo', data: { b: 2 } }, function(xhr) {
       expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
       done();
     });
@@ -255,7 +255,7 @@ describe('stubbing a POST url', function() {
       method: 'PUT'
     }).respondWith(200, { method: 'put' });
 
-    window.put('/foobar', {}, function(xhr) {
+    window.put('/foobar', function(xhr) {
       expect(JSON.parse(xhr.responseText)).toEqual({ method: 'put' });
       done();
     });

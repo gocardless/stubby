@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <script type="text/javascript" src="../bower_components/route-recognizer/dist/route-recognizer.js"></script>
+    <script type="text/javascript" src="../bower_components/lodash/lodash.js"></script>
+    <script type="text/javascript" src="../bower_components/query-string/query-string.js"></script>
+    <script type="text/javascript" src="../bower_components/FakeXMLHttpRequest/fake_xml_http_request.js"></script>
+    <script type="text/javascript" src="../bower_components/pretender/pretender.js"></script>
+    <script type="text/javascript" src="../stubby.js"></script>
+    <script type="text/javascript" src="../spec/spec-helper.js"></script>
+    <script type="text/javascript" src="./demo.js"></script>
+    <meta charset='utf8' />
+    <style type="text/css">
+      body {
+        background: #fefefe;
+        font-family: Helvetica;
+        font-size: 1.3em;
+      }
+      #app {
+        width: 450px;
+        margin: 20% auto;
+      }
+      #app li {
+        padding: 8px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <h2>Favourite internet widgets:</h2>
+      <ul id="widget-list">
+        <li class='load'>loading...</li>
+      </ul>
+    </div>
+  </body>
+</html>

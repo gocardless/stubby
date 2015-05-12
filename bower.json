@@ -13,14 +13,21 @@
   "ignore": [
     "**/.*",
     "node_modules",
-    "bower_components",
+    "bower_components"
   ],
   "dependencies": {
     "pretender": "~0.6.0",
     "query-string": "~1.0.0",
     "lodash": "~3.1.0"
   },
+  "main": [
+    "stubby.js"
+  ],
   "devDependencies": {
     "jasmine": "~2.2.1"
-  }
+  },
+  "licenses": [{
+      "type": "MIT",
+      "url": "http://www.opensource.org/licenses/MIT"
+  }]
 }
