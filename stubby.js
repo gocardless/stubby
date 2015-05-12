@@ -1,10 +1,12 @@
+'use strict';
+
 var Stubby = function() {
   this.stubs = {};
   this.pretender = new window.Pretender();
 
   this.events = {
     handlers: {},
-    whitelist: ['setup', 'routesetup', 'request'],
+    whitelist: ['setup', 'routesetup', 'request']
   };
 };
 
@@ -16,7 +18,7 @@ Stubby.prototype.addModule = function(module) {
 };
 
 Stubby.prototype.emit = function(name) {
-  if (!this.events.handlers[name]) return;
+  if (!this.events.handlers[name]) { return; }
   var args = [].slice.call(arguments, 1);
   this.events.handlers[name].forEach(function(hook) {
     hook.apply(null, args);
@@ -28,7 +30,7 @@ Stubby.prototype.on = function(name, handler, thisArg) {
     throw new Error('"' + name + '" is not a valid event handler');
   }
   this.events.handlers[name] = this.events.handlers[name] || [];
-  if (thisArg) handler = _.bind(handler, thisArg);
+  if (thisArg) { handler = _.bind(handler, thisArg); }
   this.events.handlers[name].push(handler);
 };
 
@@ -44,14 +46,14 @@ Stubby.prototype.findStubForRequest = function(req) {
     data = JSON.parse(req.requestBody) || {};
   }
 
-  if (!data) data = {};
+  if (!data) { data = {}; }
 
   return stubs.filter(function(stub) {
     return this.stubMatchesRequest(stub, {
       data: data,
       method: req.method,
       headers: req.headers,
-      queryParams: req.queryParams,
+      queryParams: req.queryParams
     });
   }, this)[0];
 };
@@ -76,7 +78,7 @@ Stubby.prototype.stubMatchesRequest = function(stub, request) {
 
   var paramKeys = _.uniq(_.keys(stub.queryParams).concat(_.keys(queryParams)));
   var queryParamsMatch = paramKeys.every(function(key) {
-    if (!(key in queryParams) || !(key in stub.queryParams)) return false;
+    if (!(key in queryParams) || !(key in stub.queryParams)) { return false; }
 
     if (isRegex(stub.queryParams[key])) {
       return testRegex(stub.queryParams[key], queryParams[key]);
@@ -93,16 +95,18 @@ Stubby.prototype.stubMatchesRequest = function(stub, request) {
 
     if (!headerToTest) {
       return false;
-    } else if (isRegex(matchHeader[1] && testRegex(headerTest, headerToTest)) {
+    }
+    if (isRegex(matchHeader[1]) && testRegex(headerTest, headerToTest)) {
       return true;
-    } else if (headerToTest == headerTest) {
+    }
+    if (headerToTest === headerTest) {
       return true;
     }
     return false;
-  }
+  });
 
   // Request data doesn't need to match if we're validating.
-  if (stub.internal.skipDataMatch) dataRequestMatch = true;
+  if (stub.internal.skipDataMatch) { dataRequestMatch = true; }
 
   return methodsMatch && queryParamsMatch && dataRequestMatch && headersMatch;
 };
@@ -118,17 +122,17 @@ Stubby.StubInternal = function(stubby, options) {
   // we do this because later we compare to the query params in the body
   // where everything is kept as a string
   Object.keys(this.queryParams).forEach(function(p) {
-    if (this.queryParams[p] == null) this.queryParams[p] = '';
+    if (this.queryParams[p] == null) { this.queryParams[p] = ''; }
     this.queryParams[p] = this.queryParams[p].toString();
   }, this);
 
-  this._requestCount = 0;
+  this.requestCount = 0;
 
   this.setupRequest = function(requestOptions) {
     this.request = {
       headers: requestOptions.headers || {},
       data: requestOptions.data || {},
-      method: requestOptions.method || 'GET',
+      method: requestOptions.method || 'GET'
     };
   };
 
@@ -141,25 +145,25 @@ Stubby.StubInternal = function(stubby, options) {
         data: stubToMatch.request.data,
         queryParams: stubToMatch.queryParams,
         headers: stubToMatch.request.headers,
-        method: stubToMatch.request.method,
+        method: stubToMatch.request.method
       });
     };
   };
 
-  this.respondWith = function(status, data, options) {
+  this.respondWith = function(status, data, responseOptions) {
     if (typeof status !== 'number') {
       throw new Error('Status (' + JSON.stringify(status) + ') is invalid.');
     }
     this.response = {
       data: data || {},
-      status: status,
+      status: status
     };
 
-    if (options.headers) {
-      this.response.headers = options.headers;
+    if (responseOptions && responseOptions.headers) {
+      this.response.headers = responseOptions.headers;
     }
 
-    if (!stubby.stubs[this.url]) stubby.stubs[this.url] = [];
+    if (!stubby.stubs[this.url]) { stubby.stubs[this.url] = []; }
 
     var matchingStub = _.find(stubby.stubs[this.url], this.stubMatcher(stubby));
     if (matchingStub) {
@@ -170,11 +174,11 @@ Stubby.StubInternal = function(stubby, options) {
 
     stubby.emit('routesetup', {}, this);
 
-    stubby.pretender[this.request.method.toLowerCase()](this.url, function(req){
+    stubby.pretender[this.request.method.toLowerCase()](this.url, function(req) {
       var matchedStub = stubby.findStubForRequest(req);
       if (matchedStub) {
         stubby.emit('request', req, matchedStub);
-        ++matchedStub._requestCount;
+        ++matchedStub.requestCount;
         return stubby.response(matchedStub);
       } else {
         throw new Error('Stubby: no stub found\n (attempting to find: ' + JSON.stringify(req) + ')');
@@ -185,7 +189,7 @@ Stubby.StubInternal = function(stubby, options) {
   };
 };
 
-Stubby.prototype.stub = function(options){
+Stubby.prototype.stub = function(options) {
   return new Stubby.StubInternal(this, options);
 };
 
@@ -206,7 +210,7 @@ Stubby.prototype.verifyNoOutstandingRequest = function() {
   var outstandingStubs = _.chain(this.stubs)
     .values()
     .flatten()
-    .filter(function(stub) { return stub._requestCount === 0; })
+    .filter(function(stub) { return stub.requestCount === 0; })
     .map(function(stub) {
       return stub.request.method + ' ' + stub.url + '/' +
         window.queryString.stringify(stub.queryParams);
@@ -221,7 +225,7 @@ Stubby.prototype.verifyNoOutstandingRequest = function() {
 Stubby.prototype.response = function(stub) {
   var headers = stub.request.headers;
 
-  if (!('Content-Type' in headers)) headers['Content-Type'] = 'application/json';
+  if (!('Content-Type' in headers)) { headers['Content-Type'] = 'application/json'; }
 
   return [stub.response.status, headers, JSON.stringify(stub.response.data)];
 };

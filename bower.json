@@ -1,7 +1,7 @@
 {
   "name": "stubby",
   "main": "stubby.js",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "https://github.com/gocardless/stubby",
   "authors": [
     "Iain Nash <iain@gocardless.com>",
@@ -14,14 +14,13 @@
     "**/.*",
     "node_modules",
     "bower_components",
-    "test",
-    "tests"
   ],
   "dependencies": {
     "pretender": "~0.6.0",
-    "jasmine": "~2.2.1",
     "query-string": "~1.0.0",
-    "tv4": "~1.1.9",
     "lodash": "~3.1.0"
+  },
+  "devDependencies": {
+    "jasmine": "~2.2.1"
   }
 }

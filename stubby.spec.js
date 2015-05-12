@@ -1,3 +1,5 @@
+'use strict';
+
 describe('stubbing a URL', function() {
   var stubby;
 
@@ -7,7 +9,7 @@ describe('stubbing a URL', function() {
 
   it('lets a URL be stubbed', function(done) {
     stubby.stub({
-      url: '/foo',
+      url: '/foo'
     }).respondWith(200, { foo: 2 });
 
     window.get('/foo', function(xhr) {
@@ -19,23 +21,23 @@ describe('stubbing a URL', function() {
 
   it('differentiates on query params', function(done) {
     stubby.stub({
-      url: '/foo?a=1',
+      url: '/foo?a=1'
     }).respondWith(200, { a: 1});
 
     stubby.stub({
       url: '/foo?b=2',
-      params: { b: 1 },
-    }).respondWith(200, { b: 1});
+      params: { b: 1 }
+    }).respondWith(200, { b: 1 });
 
     window.get('/foo?a=1', function(xhr) {
-      expect(JSON.parse(xhr.responseText)).toEqual({ a: 1});
+      expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
       done();
     });
   });
 
   it('doesn\'t match a stub with query params against a URL without', function() {
     stubby.stub({
-      url: '/foo?a=1',
+      url: '/foo?a=1'
     }).respondWith(200);
 
     expect(function() {
@@ -45,15 +47,15 @@ describe('stubbing a URL', function() {
 
   it('works with query params in both orders', function(done) {
     stubby.stub({
-      url: '/foo?a=1&b=2',
-    }).respondWith(200, { a: 1, b: 2});
+      url: '/foo?a=1&b=2'
+    }).respondWith(200, { a: 1, b: 2 });
 
     stubby.stub({
-      url: '/foo?b=3',
+      url: '/foo?b=3'
     }).respondWith(200, { b: 3 });
 
     window.get('/foo?b=2&a=1', function(xhr) {
-      expect(JSON.parse(xhr.responseText)).toEqual({ a: 1, b: 2});
+      expect(JSON.parse(xhr.responseText)).toEqual({ a: 1, b: 2 });
       done();
     });
   });
@@ -61,7 +63,7 @@ describe('stubbing a URL', function() {
   it('lets you define query params', function(done) {
     stubby.stub({
       url: '/foo',
-      params: { a: 1 },
+      params: { a: 1 }
     }).respondWith(200, { a: 1 });
 
     window.get('/foo?a=1', function(xhr) {
@@ -73,7 +75,7 @@ describe('stubbing a URL', function() {
   it('matches on regex query param values', function(done) {
     stubby.stub({
       url: '/foo',
-      params: { a: '/\\w|\\d/g' },
+      params: { a: '/\\w|\\d/g' }
     }).respondWith(200, { a: 1 });
 
     window.get('/foo?a=1', function(xhr) {
@@ -85,12 +87,12 @@ describe('stubbing a URL', function() {
   it('all params are matched', function(done) {
     stubby.stub({
       url: '/foo',
-      params: { a: '/\\w|\\d/g', c: 1 },
+      params: { a: '/\\w|\\d/g', c: 1 }
     }).respondWith(200, { a: 1 });
 
     stubby.stub({
       url: '/foo',
-      params: { b: 1, c: 1, a: '/\\w|\\d/g' },
+      params: { b: 1, c: 1, a: '/\\w|\\d/g' }
     }).respondWith(200, { is: 'not matched' });
 
     window.get('/foo?a=1&c=1', function(xhr) {
@@ -113,17 +115,17 @@ describe('allows plugins on setup and on request', function() {
       spies = {
         setup: jasmine.createSpy('setup'),
         request: jasmine.createSpy('request'),
-        routesetup: jasmine.createSpy('routesetup'),
+        routesetup: jasmine.createSpy('routesetup')
       };
       stubby.addModule({
         register: function(stubbyInstance) {
           stubbyInstance.on('setup', spies.setup);
           stubbyInstance.on('routesetup', spies.routesetup);
           stubbyInstance.on('request', spies.request);
-        },
+        }
       });
       stubby.stub({
-        url: '/test',
+        url: '/test'
       }).respondWith(200, {});
     });
 
@@ -134,7 +136,7 @@ describe('allows plugins on setup and on request', function() {
     });
     it('makes one request to setup and one request to request when set', function(done) {
       expect(spies.routesetup).toHaveBeenCalled();
-      window.get('/test', function(){
+      window.get('/test', function() {
         expect(spies.setup).toHaveBeenCalled();
         expect(spies.request).toHaveBeenCalled();
         done();
@@ -167,7 +169,6 @@ describe('verifiying that stubs have been used', function() {
           expect(function() {
             stubby.verifyNoOutstandingRequest();
           }).not.toThrow();
-
           done();
         } catch (e) {
           done(e);
@@ -221,7 +222,7 @@ describe('stubbing a POST url', function() {
   it('stubs a post URL', function(done) {
     stubby.stub({
       url: '/foo',
-      method: 'POST',
+      method: 'POST'
     }).respondWith(200, { a: 1 });
 
     window.post('/foo', {}, function(xhr) {
@@ -234,7 +235,7 @@ describe('stubbing a POST url', function() {
     stubby.stub({
       url: '/foo',
       data: { b: 2 },
-      method: 'POST',
+      method: 'POST'
     }).respondWith(200, { a: 1 });
 
     window.post('/foo', { b: 2 }, function(xhr) {
@@ -246,16 +247,16 @@ describe('stubbing a POST url', function() {
   it('can differentiate between POST and PUT data', function(done) {
     stubby.stub({
       url: '/foobar',
-      method: 'GET',
+      method: 'GET'
     }).respondWith(200, { method: 'get' });
 
     stubby.stub({
       url: '/foobar',
-      method: 'PUT',
+      method: 'PUT'
     }).respondWith(200, { method: 'put' });
 
     window.put('/foobar', {}, function(xhr) {
-      expect(JSON.parse(xhr.responseText)).toEqual({ 'method': 'put' });
+      expect(JSON.parse(xhr.responseText)).toEqual({ method: 'put' });
       done();
     });
   });
@@ -263,15 +264,15 @@ describe('stubbing a POST url', function() {
   it('can differentiate between a GET and PUT', function(done) {
     stubby.stub({
       url: '/foobar',
-      method: 'PUT',
+      method: 'PUT'
     }).respondWith(200, { method: 'put' });
     stubby.stub({
       url: '/foobar',
-      method: 'GET',
+      method: 'GET'
     }).respondWith(200, { method: 'get' });
 
     window.get('/foobar', function(xhr) {
-      expect(JSON.parse(xhr.responseText)).toEqual({'method': 'get'});
+      expect(JSON.parse(xhr.responseText)).toEqual({ method: 'get' });
       done();
     });
   });
@@ -286,7 +287,7 @@ describe('stubbing the same URL twice', function() {
   it('fails when a matching stub is redeclared', function() {
     stubby.stub({ url: '/foo' }).respondWith(200, { first: true });
 
-    expect(function(){
+    expect(function() {
       stubby.stub({ url: '/foo' }).respondWith(200, { first: false });
     }).toThrow();
   });

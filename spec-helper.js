@@ -1,3 +1,5 @@
+'use strict';
+
 'get post put delete'.split(' ').forEach(function(method) {
   window[method] = function(url, data, cb) {
     var headers;

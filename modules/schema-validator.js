@@ -1,3 +1,5 @@
+'use strict';
+
 var StubbySchemaValidator = function() {
   this.validator = window.tv4.freshApi();
   this.schemaCount = 0;
@@ -21,7 +23,9 @@ var StubbySchemaValidator = function() {
   };
 
   this.onRequestExecute = function(request, stub) {
-    if (stub.internal.options.validateSchema === false) return;
+    if (stub.internal.options.validateSchema === false) {
+      return null;
+    }
     return this.validate(request, stub);
   };
 
@@ -89,7 +93,7 @@ var StubbySchemaValidator = function() {
     var req = _.extend({}, queryParams, requestData);
 
     // An empty request is valid. (in the case of gocardless' schema)
-    if (_.isEmpty(req)) return;
+    if (_.isEmpty(req)) { return; }
 
     var valResponse = this.validator.validateMultiple(req, schema, true, false);
     if (valResponse.errors.length > 0 || valResponse.missing.length > 0) {
