@@ -9,7 +9,7 @@ describe('uses modules to validate json schema', function() {
   beforeEach(function() {
     stubby = new window.stubby.Stubby();
 
-    var validator = new window.stubbySchemaModule();
+    var validator = new window.stubbySchemaValidator();
     validator.addSchema('/', schema);
     stubby.addModule(validator);
     return stubby;

@@ -1,9 +1,49 @@
+#!/bin/bash
+
+#
+# Stubby Build Script
+# Author: iain nash
+# Todo: Replace with make?
+#
 
 PATH=$PATH:./node_modules/.bin
 
-browserify index.js --standalone stubby > dist/stubby-bundle.js
+if [[ "$@" == "-f" ]] || [ "node_modules" -nt "dist/stubby-bundle.js" ]
+then
+	FORCE_COMPILE=1
+else
+	FORCE_COMPILE=0
+fi
 
-browserify modules/schema-validator.js --standalone stubby-schema-module > dist/stubby-schema-validator-bundle.js
+# Compile stubby
 
-uglifyjs dist/stubby-bundle.js > dist/stubby-bundle.min.js
-uglifyjs dist/stubby-schema-validator-bundle.js > dist/stubby-schema-validator-bundle.min.js
+if [ $FORCE_COMPILE -eq 1 ] || [ "dist/stubby-bundle.js" -ot "dist/stubby-bundle.js" ]
+then
+	printf 'Browserifying base stubby module: '
+	browserify index.js --standalone stubby > dist/stubby-bundle.js
+	uglifyjs dist/stubby-bundle.js > dist/stubby-bundle.min.js
+	echo 'done'
+else
+	echo 'Skipping browserifying stubby output newer than input [pass -f to skip check]'
+fi
+
+# Compile modules
+
+MODULES=($(ls -d ./modules/*.js))
+
+for module_raw in "${MODULES[@]}"
+do
+	module=$(basename $module_raw)
+	MODULE_NAME=stubby-${module%.*}
+	OUTPUT_FILENAME_BASE="dist/modules/${MODULE_NAME}-bundle"
+	if [ $FORCE_COMPILE -eq 1 ] || [ $module_raw -nt "${OUTPUT_FILENAME_BASE}.js" ]
+	then
+		printf "Browserifying stubby module ${MODULE_NAME}: "
+		browserify "modules/${module}" --standalone $MODULE_NAME > "${OUTPUT_FILENAME_BASE}.js"
+		uglifyjs ${OUTPUT_FILENAME_BASE}.js > ${OUTPUT_FILENAME_BASE}.min.js
+		echo 'done'
+	else
+		echo "Output file for ${MODULE_NAME} newer than input, ignoring [pass -f to skip check]."
+	fi
+done
+

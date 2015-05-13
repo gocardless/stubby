@@ -82,7 +82,6 @@ var StubbySchemaValidatorModule = function(deps) {
 
     this.getSchemaForRoute = function(stub, routeRef) {
       return _.find(this.hyperschemaUrls[routeRef], function(schema) {
-        console.log('at', schema);
         if (schema.method === stub.request.method) {
           return true;
         }

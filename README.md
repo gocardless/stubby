@@ -33,9 +33,39 @@ $.get('/foo?b=1', function(response) {
 		alert('fail');
 	}
 })
+```
+
+### Modules:
+
+**How to setup a module:**
+The included modules in the `modules/` folder are optional, officially supported parts of this project to supplement the functionality of stubby but also to keep the core lightweight. Eventually, these may be seperated into their own modules. Modules are registered by calling:
+
+```js
+var addonModule = new RandomAddonModule();
+var stubby = new stubby.Stubb();
+stubby.addModule(addonModule);
+```
+
+**schema-validator**:
+
+While stubby doesn't support json schema validation out of the box, a module is included within the modules folder with a test in spec/modules that allows for schema validation on all responses and requests that are stubbed, allowing for request data to be validated without being explicitly defined in the stub. This allows for verifications of proper stubbing to match with a JSON schema api. To setup the validator, add a schema by calling `var module = new window.stubbySchemaModule(); validator.addSchema('/', schemaJSON);`. The module is bundled in `dist/stubby-schema-validator-bundle.js`, which can be included exposing the module to the global `window` object.
+
+**chaos-monkey**:
+
+A demo module that responds with random http status codes instead of the ones specified with the stub with the option `{chaos: true}` is set in the stub.
+It also verifies that the response http status is equal to 42 in order to allow for chaos.
+This module demonstrates how to write a simple module to integrate within the stubby framework.
+
+### Development:
+
+In order to recompile the browserify modules, run `./script/build` to rebuild. To force a build, run `./script/build -f`.
+
+If you choose to not user browserify modules, include all dependencies and the `stubby.js` and the appropiate modules `modules/MODULE_NAME.js`, it's recommended to use bower to download client-side dependencies.
+
 
 ### Limitations:
 
 Since stubby was created for JSON apis, it might be better to use the raw pretender API instead of stubby for other types of data.
 
 Additionally, pretender doesn't allow for mocking JSONP or cross-origin ajax requests, so stubby only works for the same hostname/protocol/port ajax requests.
+
