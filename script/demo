@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#
+# Stubby Demo Script
+#
+
+python -m SimpleHTTPServer 5565 &
+
+URL=http://localhost:5565/example/demo.html
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  open $URL
+else
+  echo "Go to $URL in your browser to see the demo"
+fi
+
+trap "trap - SIGTERM && kill -- -$$" SIGINT SIGTERM EXIT
+
+read

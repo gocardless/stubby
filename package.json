@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "./script/test",
-    "build": "./script/build"
+    "build": "./script/build",
+    "demo": "./script/demo"
   },
   "repository": {
     "type": "git",
