@@ -1,15 +1,15 @@
 'use strict';
 
 // [!] URLs are relative to the test runner html file, not this javascript file.
-var schemaStr = window.get({url: './schema/schema-private.json', async: false}).responseText;
+var schemaStr = window.get({url: './modules/test-schema.json', async: false}).responseText;
 var schema = JSON.parse(schemaStr);
 
 describe('uses modules to validate json schema', function() {
   var stubby;
   beforeEach(function() {
-    stubby = new window.Stubby();
+    stubby = new window.stubby.Stubby();
 
-    var validator = new window.StubbySchemaValidator();
+    var validator = new window.stubbySchemaModule();
     validator.addSchema('/', schema);
     stubby.addModule(validator);
     return stubby;
@@ -53,7 +53,9 @@ describe('uses modules to validate json schema', function() {
       }).respondWith(422, {});
 
       expect(function() {
-        window.post('/customers', { invalid: 'data' }, function() {
+        window.post({
+          url: '/customers', data: { invalid: 'data' }
+        }, function() {
           // Should throw.
         });
       }).toThrowError();

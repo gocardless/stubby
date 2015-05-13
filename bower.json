@@ -1,8 +1,6 @@
 {
   "name": "stubby",
-  "main": [
-    "stubby.js"
-  ],
+  "main": ["dist/stubby-bundle.js"],
   "version": "0.0.2",
   "homepage": "https://github.com/gocardless/stubby",
   "authors": [

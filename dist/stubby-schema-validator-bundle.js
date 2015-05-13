@@ -1,4 +1,4 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.stubby = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.stubbySchemaModule = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -12205,504 +12205,6 @@
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],2:[function(require,module,exports){
-(function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  typeof define === 'function' && define.amd ? define(factory) :
-  global.FakeXMLHttpRequest = factory()
-}(this, function () { 'use strict';
-
-  /**
-   * Minimal Event interface implementation
-   *
-   * Original implementation by Sven Fuchs: https://gist.github.com/995028
-   * Modifications and tests by Christian Johansen.
-   *
-   * @author Sven Fuchs (svenfuchs@artweb-design.de)
-   * @author Christian Johansen (christian@cjohansen.no)
-   * @license BSD
-   *
-   * Copyright (c) 2011 Sven Fuchs, Christian Johansen
-   */
-
-  var _Event = function Event(type, bubbles, cancelable, target) {
-    this.type = type;
-    this.bubbles = bubbles;
-    this.cancelable = cancelable;
-    this.target = target;
-  };
-
-  _Event.prototype = {
-    stopPropagation: function () {},
-    preventDefault: function () {
-      this.defaultPrevented = true;
-    }
-  };
-
-  /*
-    Used to set the statusText property of an xhr object
-  */
-  var httpStatusCodes = {
-    100: "Continue",
-    101: "Switching Protocols",
-    200: "OK",
-    201: "Created",
-    202: "Accepted",
-    203: "Non-Authoritative Information",
-    204: "No Content",
-    205: "Reset Content",
-    206: "Partial Content",
-    300: "Multiple Choice",
-    301: "Moved Permanently",
-    302: "Found",
-    303: "See Other",
-    304: "Not Modified",
-    305: "Use Proxy",
-    307: "Temporary Redirect",
-    400: "Bad Request",
-    401: "Unauthorized",
-    402: "Payment Required",
-    403: "Forbidden",
-    404: "Not Found",
-    405: "Method Not Allowed",
-    406: "Not Acceptable",
-    407: "Proxy Authentication Required",
-    408: "Request Timeout",
-    409: "Conflict",
-    410: "Gone",
-    411: "Length Required",
-    412: "Precondition Failed",
-    413: "Request Entity Too Large",
-    414: "Request-URI Too Long",
-    415: "Unsupported Media Type",
-    416: "Requested Range Not Satisfiable",
-    417: "Expectation Failed",
-    422: "Unprocessable Entity",
-    500: "Internal Server Error",
-    501: "Not Implemented",
-    502: "Bad Gateway",
-    503: "Service Unavailable",
-    504: "Gateway Timeout",
-    505: "HTTP Version Not Supported"
-  };
-
-
-  /*
-    Cross-browser XML parsing. Used to turn
-    XML responses into Document objects
-    Borrowed from JSpec
-  */
-  function parseXML(text) {
-    var xmlDoc;
-
-    if (typeof DOMParser != "undefined") {
-      var parser = new DOMParser();
-      xmlDoc = parser.parseFromString(text, "text/xml");
-    } else {
-      xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-      xmlDoc.async = "false";
-      xmlDoc.loadXML(text);
-    }
-
-    return xmlDoc;
-  }
-
-  /*
-    Without mocking, the native XMLHttpRequest object will throw
-    an error when attempting to set these headers. We match this behavior.
-  */
-  var unsafeHeaders = {
-    "Accept-Charset": true,
-    "Accept-Encoding": true,
-    "Connection": true,
-    "Content-Length": true,
-    "Cookie": true,
-    "Cookie2": true,
-    "Content-Transfer-Encoding": true,
-    "Date": true,
-    "Expect": true,
-    "Host": true,
-    "Keep-Alive": true,
-    "Referer": true,
-    "TE": true,
-    "Trailer": true,
-    "Transfer-Encoding": true,
-    "Upgrade": true,
-    "User-Agent": true,
-    "Via": true
-  };
-
-  /*
-    Adds an "event" onto the fake xhr object
-    that just calls the same-named method. This is
-    in case a library adds callbacks for these events.
-  */
-  function _addEventListener(eventName, xhr){
-    xhr.addEventListener(eventName, function (event) {
-      var listener = xhr["on" + eventName];
-
-      if (listener && typeof listener == "function") {
-        listener(event);
-      }
-    });
-  }
-
-  function EventedObject() {
-    this._eventListeners = {};
-    var events = ["loadstart", "progress", "load", "abort", "loadend"];
-    for (var i = events.length - 1; i >= 0; i--) {
-      _addEventListener(events[i], this);
-    }
-  };
-
-  EventedObject.prototype = {
-    /*
-      Duplicates the behavior of native XMLHttpRequest's addEventListener function
-    */
-    addEventListener: function addEventListener(event, listener) {
-      this._eventListeners[event] = this._eventListeners[event] || [];
-      this._eventListeners[event].push(listener);
-    },
-
-    /*
-      Duplicates the behavior of native XMLHttpRequest's removeEventListener function
-    */
-    removeEventListener: function removeEventListener(event, listener) {
-      var listeners = this._eventListeners[event] || [];
-
-      for (var i = 0, l = listeners.length; i < l; ++i) {
-        if (listeners[i] == listener) {
-          return listeners.splice(i, 1);
-        }
-      }
-    },
-
-    /*
-      Duplicates the behavior of native XMLHttpRequest's dispatchEvent function
-    */
-    dispatchEvent: function dispatchEvent(event) {
-      var type = event.type;
-      var listeners = this._eventListeners[type] || [];
-
-      for (var i = 0; i < listeners.length; i++) {
-        if (typeof listeners[i] == "function") {
-          listeners[i].call(this, event);
-        } else {
-          listeners[i].handleEvent(event);
-        }
-      }
-
-      return !!event.defaultPrevented;
-    },
-
-    /*
-      Triggers an `onprogress` event with the given parameters.
-    */
-    _progress: function _progress(lengthComputable, loaded, total) {
-      var event = new _Event('progress');
-      event.target = this;
-      event.lengthComputable = lengthComputable;
-      event.loaded = loaded;
-      event.total = total;
-      this.dispatchEvent(event);
-    }
-  }
-
-  /*
-    Constructor for a fake window.XMLHttpRequest
-  */
-  function FakeXMLHttpRequest() {
-    EventedObject.call(this);
-    this.readyState = FakeXMLHttpRequest.UNSENT;
-    this.requestHeaders = {};
-    this.requestBody = null;
-    this.status = 0;
-    this.statusText = "";
-    this.upload = new EventedObject();
-  }
-
-  FakeXMLHttpRequest.prototype = new EventedObject();
-
-  // These status codes are available on the native XMLHttpRequest
-  // object, so we match that here in case a library is relying on them.
-  FakeXMLHttpRequest.UNSENT = 0;
-  FakeXMLHttpRequest.OPENED = 1;
-  FakeXMLHttpRequest.HEADERS_RECEIVED = 2;
-  FakeXMLHttpRequest.LOADING = 3;
-  FakeXMLHttpRequest.DONE = 4;
-
-  var FakeXMLHttpRequestProto = {
-    UNSENT: 0,
-    OPENED: 1,
-    HEADERS_RECEIVED: 2,
-    LOADING: 3,
-    DONE: 4,
-    async: true,
-
-    /*
-      Duplicates the behavior of native XMLHttpRequest's open function
-    */
-    open: function open(method, url, async, username, password) {
-      this.method = method;
-      this.url = url;
-      this.async = typeof async == "boolean" ? async : true;
-      this.username = username;
-      this.password = password;
-      this.responseText = null;
-      this.responseXML = null;
-      this.requestHeaders = {};
-      this.sendFlag = false;
-      this._readyStateChange(FakeXMLHttpRequest.OPENED);
-    },
-
-    /*
-      Duplicates the behavior of native XMLHttpRequest's setRequestHeader function
-    */
-    setRequestHeader: function setRequestHeader(header, value) {
-      verifyState(this);
-
-      if (unsafeHeaders[header] || /^(Sec-|Proxy-)/.test(header)) {
-        throw new Error("Refused to set unsafe header \"" + header + "\"");
-      }
-
-      if (this.requestHeaders[header]) {
-        this.requestHeaders[header] += "," + value;
-      } else {
-        this.requestHeaders[header] = value;
-      }
-    },
-
-    /*
-      Duplicates the behavior of native XMLHttpRequest's send function
-    */
-    send: function send(data) {
-      verifyState(this);
-
-      if (!/^(get|head)$/i.test(this.method)) {
-        if (this.requestHeaders["Content-Type"]) {
-          var value = this.requestHeaders["Content-Type"].split(";");
-          this.requestHeaders["Content-Type"] = value[0] + ";charset=utf-8";
-        } else {
-          this.requestHeaders["Content-Type"] = "text/plain;charset=utf-8";
-        }
-
-        this.requestBody = data;
-      }
-
-      this.errorFlag = false;
-      this.sendFlag = this.async;
-      this._readyStateChange(FakeXMLHttpRequest.OPENED);
-
-      if (typeof this.onSend == "function") {
-        this.onSend(this);
-      }
-
-      this.dispatchEvent(new _Event("loadstart", false, false, this));
-    },
-
-    /*
-      Duplicates the behavior of native XMLHttpRequest's abort function
-    */
-    abort: function abort() {
-      this.aborted = true;
-      this.responseText = null;
-      this.errorFlag = true;
-      this.requestHeaders = {};
-
-      if (this.readyState > FakeXMLHttpRequest.UNSENT && this.sendFlag) {
-        this._readyStateChange(FakeXMLHttpRequest.DONE);
-        this.sendFlag = false;
-      }
-
-      this.readyState = FakeXMLHttpRequest.UNSENT;
-
-      this.dispatchEvent(new _Event("abort", false, false, this));
-      if (typeof this.onerror === "function") {
-          this.onerror();
-      }
-    },
-
-    /*
-      Duplicates the behavior of native XMLHttpRequest's getResponseHeader function
-    */
-    getResponseHeader: function getResponseHeader(header) {
-      if (this.readyState < FakeXMLHttpRequest.HEADERS_RECEIVED) {
-        return null;
-      }
-
-      if (/^Set-Cookie2?$/i.test(header)) {
-        return null;
-      }
-
-      header = header.toLowerCase();
-
-      for (var h in this.responseHeaders) {
-        if (h.toLowerCase() == header) {
-          return this.responseHeaders[h];
-        }
-      }
-
-      return null;
-    },
-
-    /*
-      Duplicates the behavior of native XMLHttpRequest's getAllResponseHeaders function
-    */
-    getAllResponseHeaders: function getAllResponseHeaders() {
-      if (this.readyState < FakeXMLHttpRequest.HEADERS_RECEIVED) {
-        return "";
-      }
-
-      var headers = "";
-
-      for (var header in this.responseHeaders) {
-        if (this.responseHeaders.hasOwnProperty(header) && !/^Set-Cookie2?$/i.test(header)) {
-          headers += header + ": " + this.responseHeaders[header] + "\r\n";
-        }
-      }
-
-      return headers;
-    },
-
-    /*
-      Places a FakeXMLHttpRequest object into the passed
-      state.
-    */
-    _readyStateChange: function _readyStateChange(state) {
-      this.readyState = state;
-
-      if (typeof this.onreadystatechange == "function") {
-        this.onreadystatechange();
-      }
-
-      this.dispatchEvent(new _Event("readystatechange"));
-
-      if (this.readyState == FakeXMLHttpRequest.DONE) {
-        this.dispatchEvent(new _Event("load", false, false, this));
-        this.dispatchEvent(new _Event("loadend", false, false, this));
-      }
-    },
-
-
-    /*
-      Sets the FakeXMLHttpRequest object's response headers and
-      places the object into readyState 2
-    */
-    _setResponseHeaders: function _setResponseHeaders(headers) {
-      this.responseHeaders = {};
-
-      for (var header in headers) {
-        if (headers.hasOwnProperty(header)) {
-            this.responseHeaders[header] = headers[header];
-        }
-      }
-
-      if (this.async) {
-        this._readyStateChange(FakeXMLHttpRequest.HEADERS_RECEIVED);
-      } else {
-        this.readyState = FakeXMLHttpRequest.HEADERS_RECEIVED;
-      }
-    },
-
-    /*
-      Sets the FakeXMLHttpRequest object's response body and
-      if body text is XML, sets responseXML to parsed document
-      object
-    */
-    _setResponseBody: function _setResponseBody(body) {
-      verifyRequestSent(this);
-      verifyHeadersReceived(this);
-      verifyResponseBodyType(body);
-
-      var chunkSize = this.chunkSize || 10;
-      var index = 0;
-      this.responseText = "";
-
-      do {
-        if (this.async) {
-          this._readyStateChange(FakeXMLHttpRequest.LOADING);
-        }
-
-        this.responseText += body.substring(index, index + chunkSize);
-        index += chunkSize;
-      } while (index < body.length);
-
-      var type = this.getResponseHeader("Content-Type");
-
-      if (this.responseText && (!type || /(text\/xml)|(application\/xml)|(\+xml)/.test(type))) {
-        try {
-          this.responseXML = parseXML(this.responseText);
-        } catch (e) {
-          // Unable to parse XML - no biggie
-        }
-      }
-
-      if (this.async) {
-        this._readyStateChange(FakeXMLHttpRequest.DONE);
-      } else {
-        this.readyState = FakeXMLHttpRequest.DONE;
-      }
-    },
-
-    /*
-      Forces a response on to the FakeXMLHttpRequest object.
-
-      This is the public API for faking responses. This function
-      takes a number status, headers object, and string body:
-
-      ```
-      xhr.respond(404, {Content-Type: 'text/plain'}, "Sorry. This object was not found.")
-
-      ```
-    */
-    respond: function respond(status, headers, body) {
-      this._setResponseHeaders(headers || {});
-      this.status = typeof status == "number" ? status : 200;
-      this.statusText = httpStatusCodes[this.status];
-      this._setResponseBody(body || "");
-    }
-  };
-
-  for (var property in FakeXMLHttpRequestProto) {
-    FakeXMLHttpRequest.prototype[property] = FakeXMLHttpRequestProto[property];
-  }
-
-  function verifyState(xhr) {
-    if (xhr.readyState !== FakeXMLHttpRequest.OPENED) {
-      throw new Error("INVALID_STATE_ERR");
-    }
-
-    if (xhr.sendFlag) {
-      throw new Error("INVALID_STATE_ERR");
-    }
-  }
-
-
-  function verifyRequestSent(xhr) {
-      if (xhr.readyState == FakeXMLHttpRequest.DONE) {
-          throw new Error("Request done");
-      }
-  }
-
-  function verifyHeadersReceived(xhr) {
-      if (xhr.async && xhr.readyState != FakeXMLHttpRequest.HEADERS_RECEIVED) {
-          throw new Error("No headers received");
-      }
-  }
-
-  function verifyResponseBodyType(body) {
-      if (typeof body != "string") {
-          var error = new Error("Attempted to respond to fake XMLHttpRequest with " +
-                               body + ", which is not a string.");
-          error.name = "InvalidBodyException";
-          throw error;
-      }
-  }
-  var fake_xml_http_request = FakeXMLHttpRequest;
-
-  return fake_xml_http_request;
-
-}));
-},{}],3:[function(require,module,exports){
 (function() {
     "use strict";
     function $$route$recognizer$dsl$$Target(path, matcher, delegate) {
@@ -13351,625 +12853,1798 @@
 }).call(this);
 
 //# sourceMappingURL=route-recognizer.js.map
-},{}],4:[function(require,module,exports){
-(function (__dirname){
-(function(window){
+},{}],3:[function(require,module,exports){
+/*
+Author: Geraint Luff and others
+Year: 2013
 
-var isNode = typeof __dirname !== 'undefined';
-var RouteRecognizer = isNode ? require('route-recognizer') : window.RouteRecognizer;
-var FakeXMLHttpRequest = isNode ? require('fake-xml-http-request') : window.FakeXMLHttpRequest;
-var slice = [].slice;
+This code is released into the "public domain" by its author(s).  Anybody may use, alter and distribute the code without restriction.  The author makes no guarantees, and takes no liability of any kind for use of this code.
 
-function Pretender(/* routeMap1, routeMap2, ...*/){
-  maps = slice.call(arguments);
-  // Herein we keep track of RouteRecognizer instances
-  // keyed by HTTP method. Feel free to add more as needed.
-  this.registry = {
-    GET: new RouteRecognizer(),
-    PUT: new RouteRecognizer(),
-    POST: new RouteRecognizer(),
-    DELETE: new RouteRecognizer(),
-    PATCH: new RouteRecognizer(),
-    HEAD: new RouteRecognizer()
-  };
-
-  this.handlers = [];
-  this.handledRequests = [];
-  this.passthroughRequests = [];
-  this.unhandledRequests = [];
-  this.requestReferences = [];
-
-  // reference the native XMLHttpRequest object so
-  // it can be restored later
-  this._nativeXMLHttpRequest = window.XMLHttpRequest;
-
-  // capture xhr requests, channeling them into
-  // the route map.
-  window.XMLHttpRequest = interceptor(this);
-
-  // "start" the server
-  this.running = true;
-
-  // trigger the route map DSL.
-  for(i=0; i < arguments.length; i++){
-    this.map(arguments[i]);
+If you find a bug or make an improvement, it would be courteous to let the author know, but it is not compulsory.
+*/
+(function (global, factory) {
+  if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define([], factory);
+  } else if (typeof module !== 'undefined' && module.exports){
+    // CommonJS. Define export.
+    module.exports = factory();
+  } else {
+    // Browser globals
+    global.tv4 = factory();
   }
+}(this, function () {
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys?redirectlocale=en-US&redirectslug=JavaScript%2FReference%2FGlobal_Objects%2FObject%2Fkeys
+if (!Object.keys) {
+	Object.keys = (function () {
+		var hasOwnProperty = Object.prototype.hasOwnProperty,
+			hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+			dontEnums = [
+				'toString',
+				'toLocaleString',
+				'valueOf',
+				'hasOwnProperty',
+				'isPrototypeOf',
+				'propertyIsEnumerable',
+				'constructor'
+			],
+			dontEnumsLength = dontEnums.length;
+
+		return function (obj) {
+			if (typeof obj !== 'object' && typeof obj !== 'function' || obj === null) {
+				throw new TypeError('Object.keys called on non-object');
+			}
+
+			var result = [];
+
+			for (var prop in obj) {
+				if (hasOwnProperty.call(obj, prop)) {
+					result.push(prop);
+				}
+			}
+
+			if (hasDontEnumBug) {
+				for (var i=0; i < dontEnumsLength; i++) {
+					if (hasOwnProperty.call(obj, dontEnums[i])) {
+						result.push(dontEnums[i]);
+					}
+				}
+			}
+			return result;
+		};
+	})();
+}
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/create
+if (!Object.create) {
+	Object.create = (function(){
+		function F(){}
+
+		return function(o){
+			if (arguments.length !== 1) {
+				throw new Error('Object.create implementation only accepts one parameter.');
+			}
+			F.prototype = o;
+			return new F();
+		};
+	})();
+}
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray?redirectlocale=en-US&redirectslug=JavaScript%2FReference%2FGlobal_Objects%2FArray%2FisArray
+if(!Array.isArray) {
+	Array.isArray = function (vArg) {
+		return Object.prototype.toString.call(vArg) === "[object Array]";
+	};
+}
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf?redirectlocale=en-US&redirectslug=JavaScript%2FReference%2FGlobal_Objects%2FArray%2FindexOf
+if (!Array.prototype.indexOf) {
+	Array.prototype.indexOf = function (searchElement /*, fromIndex */ ) {
+		if (this === null) {
+			throw new TypeError();
+		}
+		var t = Object(this);
+		var len = t.length >>> 0;
+
+		if (len === 0) {
+			return -1;
+		}
+		var n = 0;
+		if (arguments.length > 1) {
+			n = Number(arguments[1]);
+			if (n !== n) { // shortcut for verifying if it's NaN
+				n = 0;
+			} else if (n !== 0 && n !== Infinity && n !== -Infinity) {
+				n = (n > 0 || -1) * Math.floor(Math.abs(n));
+			}
+		}
+		if (n >= len) {
+			return -1;
+		}
+		var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
+		for (; k < len; k++) {
+			if (k in t && t[k] === searchElement) {
+				return k;
+			}
+		}
+		return -1;
+	};
 }
 
-function interceptor(pretender) {
-  function FakeRequest(){
-    // super()
-    FakeXMLHttpRequest.call(this);
-  }
-  // extend
-  var proto = new FakeXMLHttpRequest();
-  proto.send = function send(){
-    if (!pretender.running) {
-      throw new Error('You shut down a Pretender instance while there was a pending request. '+
-            'That request just tried to complete. Check to see if you accidentally shut down '+
-            'a pretender earlier than you intended to');
-    }
-
-    FakeXMLHttpRequest.prototype.send.apply(this, arguments);
-    if (!pretender.checkPassthrough(this)) {
-      pretender.handleRequest(this);
-    }
-    else {
-      var xhr = createPassthrough(this);
-      xhr.send.apply(xhr, arguments);
-    }
-  };
-
-  // passthrough handling
-  var evts = ['load', 'error', 'timeout', 'progress', 'abort', 'readystatechange'];
-  var lifecycleProps = ['readyState', 'responseText', 'responseXML', 'status', 'statusText'];
-  function createPassthrough(fakeXHR) {
-    var xhr = fakeXHR._passthroughRequest = new pretender._nativeXMLHttpRequest();
-    // listen to all events to update lifecycle properties
-    for (var i = 0; i < evts.length; i++) (function(evt) {
-      xhr['on' + evt] = function(e) {
-        // update lifecycle props on each event
-        for (var i = 0; i < lifecycleProps.length; i++) {
-          var prop = lifecycleProps[i];
-          if (xhr[prop]) {
-            fakeXHR[prop] = xhr[prop];
-          }
-        }
-        // fire fake events where applicable
-        fakeXHR.dispatchEvent(evt, e);
-        if (fakeXHR['on' + evt]) {
-          fakeXHR['on' + evt](e);
-        }
-      };
-    })(evts[i]);
-    xhr.open(fakeXHR.method, fakeXHR.url, fakeXHR.async, fakeXHR.username, fakeXHR.password);
-    xhr.timeout = fakeXHR.timeout;
-    xhr.withCredentials = fakeXHR.withCredentials;
-    for (var h in fakeXHR.requestHeaders) {
-      xhr.setRequestHeader(h, fakeXHR.requestHeaders[h]);
-    }
-    return xhr;
-  }
-  proto._passthroughCheck = function(method, arguments) {
-    if (this._passthroughRequest) {
-      return this._passthroughRequest[method].apply(this._passthroughRequest, arguments);
-    }
-    return FakeXMLHttpRequest.prototype[method].apply(this, arguments);
-  }
-  proto.abort = function abort(){
-    return this._passthroughCheck('abort', arguments);
-  }
-  proto.getResponseHeader = function getResponseHeader(){
-    return this._passthroughCheck('getResponseHeader', arguments);
-  }
-  proto.getAllResponseHeaders = function getAllResponseHeaders(){
-    return this._passthroughCheck('getAllResponseHeaders', arguments);
-  }
-
-  FakeRequest.prototype = proto;
-  return FakeRequest;
+// Grungey Object.isFrozen hack
+if (!Object.isFrozen) {
+	Object.isFrozen = function (obj) {
+		var key = "tv4_test_frozen_key";
+		while (obj.hasOwnProperty(key)) {
+			key += Math.random();
+		}
+		try {
+			obj[key] = true;
+			delete obj[key];
+			return false;
+		} catch (e) {
+			return true;
+		}
+	};
 }
+// Based on: https://github.com/geraintluff/uri-templates, but with all the de-substitution stuff removed
 
-function verbify(verb){
-  return function(path, handler, async){
-    this.register(verb, path, handler, async);
-  };
-}
-
-function throwIfURLDetected(url){
-  var HTTP_REGEXP = /^https?/;
-  var message;
-
-  if(HTTP_REGEXP.test(url)) {
-    var parser = window.document.createElement('a');
-    parser.href = url;
-
-    message = "Pretender will not respond to requests for URLs. It is not possible to accurately simluate the browser's CSP. "+
-              "Remove the " + parser.protocol +"//"+ parser.hostname +" from " + url + " and try again";
-    throw new Error(message)
-  }
-}
-
-var PASSTHROUGH = {};
-
-Pretender.prototype = {
-  get: verbify('GET'),
-  post: verbify('POST'),
-  put: verbify('PUT'),
-  'delete': verbify('DELETE'),
-  patch: verbify('PATCH'),
-  head: verbify('HEAD'),
-  map: function(maps){
-    maps.call(this);
-  },
-  register: function register(verb, path, handler, async){
-    if (!handler) {
-      throw new Error("The function you tried passing to Pretender to handle " + verb + " " + path + " is undefined or missing.");
-    }
-
-    handler.numberOfCalls = 0;
-    handler.async = async;
-    this.handlers.push(handler);
-
-    var registry = this.registry[verb];
-    registry.add([{path: path, handler: handler}]);
-  },
-  passthrough: PASSTHROUGH,
-  checkPassthrough: function(request) {
-    var verb = request.method.toUpperCase();
-    var path = request.url;
-
-    throwIfURLDetected(path);
-
-    verb = verb.toUpperCase();
-
-    var recognized = this.registry[verb].recognize(path);
-    var match = recognized && recognized[0];
-    if (match && match.handler == PASSTHROUGH) {
-      this.passthroughRequests.push(request);
-      this.passthroughRequest(verb, path, request);
-      return true;
-    }
-
-    return false;
-  },
-  handleRequest: function handleRequest(request){
-    var verb = request.method.toUpperCase();
-    var path = request.url;
-
-    var handler = this._handlerFor(verb, path, request);
-
-    if (handler) {
-      handler.handler.numberOfCalls++;
-      var async = handler.handler.async;
-      this.handledRequests.push(request);
-
-      try {
-        var statusHeadersAndBody = handler.handler(request),
-            status = statusHeadersAndBody[0],
-            headers = this.prepareHeaders(statusHeadersAndBody[1]),
-            body = this.prepareBody(statusHeadersAndBody[2]),
-            pretender = this;
-
-        this.handleResponse(request, async, function() {
-          request.respond(status, headers, body);
-          pretender.handledRequest(verb, path, request);
-        });
-      } catch (error) {
-        this.erroredRequest(verb, path, request, error);
-        this.resolve(request);
-      }
-    } else {
-      this.unhandledRequests.push(request);
-      this.unhandledRequest(verb, path, request);
-    }
-  },
-  handleResponse: function handleResponse(request, strategy, callback) {
-    strategy = typeof strategy === 'function' ? strategy() : strategy;
-
-    if (strategy === false) {
-      callback();
-    } else {
-      var pretender = this;
-      pretender.requestReferences.push({
-        request: request,
-        callback: callback
-      });
-
-      if (strategy !== true) {
-        setTimeout(function() {
-          pretender.resolve(request);
-        }, typeof strategy === 'number' ? strategy : 0);
-      }
-    }
-  },
-  resolve: function resolve(request) {
-    for(var i = 0, len = this.requestReferences.length; i < len; i++) {
-      var res = this.requestReferences[i];
-      if (res.request === request) {
-        res.callback();
-        this.requestReferences.splice(i, 1);
-        break;
-      }
-    }
-  },
-  requiresManualResolution: function(verb, path) {
-    var handler = this._handlerFor(verb.toUpperCase(), path, {});
-    if (!handler) { return false; }
-
-    var async = handler.handler.async;
-    return typeof async === 'function' ? async() === true : async === true;
-  },
-  prepareBody: function(body) { return body; },
-  prepareHeaders: function(headers) { return headers; },
-  handledRequest: function(verb, path, request) { /* no-op */},
-  passthroughRequest: function(verb, path, request) { /* no-op */},
-  unhandledRequest: function(verb, path, request) {
-    throw new Error("Pretender intercepted "+verb+" "+path+" but no handler was defined for this type of request");
-  },
-  erroredRequest: function(verb, path, request, error){
-    error.message = "Pretender intercepted "+verb+" "+path+" but encountered an error: " + error.message;
-    throw error;
-  },
-  _handlerFor: function(verb, path, request){
-    var registry = this.registry[verb];
-    var matches = registry.recognize(path);
-
-    var match = matches ? matches[0] : null;
-    if (match) {
-      request.params = match.params;
-      request.queryParams = matches.queryParams;
-    }
-
-    return match;
-  },
-  shutdown: function shutdown(){
-    window.XMLHttpRequest = this._nativeXMLHttpRequest;
-
-    // "stop" the server
-    this.running = false;
-  }
+var uriTemplateGlobalModifiers = {
+	"+": true,
+	"#": true,
+	".": true,
+	"/": true,
+	";": true,
+	"?": true,
+	"&": true
+};
+var uriTemplateSuffices = {
+	"*": true
 };
 
-if (isNode) {
-  module.exports = Pretender;
-} else {
-  window.Pretender = Pretender;
+function notReallyPercentEncode(string) {
+	return encodeURI(string).replace(/%25[0-9][0-9]/g, function (doubleEncoded) {
+		return "%" + doubleEncoded.substring(3);
+	});
 }
 
-})(window);
-
-}).call(this,"/node_modules/pretender")
-},{"fake-xml-http-request":2,"route-recognizer":3}],5:[function(require,module,exports){
-'use strict';
-
-exports.parse = function (str) {
-	if (typeof str !== 'string') {
-		return {};
+function uriTemplateSubstitution(spec) {
+	var modifier = "";
+	if (uriTemplateGlobalModifiers[spec.charAt(0)]) {
+		modifier = spec.charAt(0);
+		spec = spec.substring(1);
+	}
+	var separator = "";
+	var prefix = "";
+	var shouldEscape = true;
+	var showVariables = false;
+	var trimEmptyString = false;
+	if (modifier === '+') {
+		shouldEscape = false;
+	} else if (modifier === ".") {
+		prefix = ".";
+		separator = ".";
+	} else if (modifier === "/") {
+		prefix = "/";
+		separator = "/";
+	} else if (modifier === '#') {
+		prefix = "#";
+		shouldEscape = false;
+	} else if (modifier === ';') {
+		prefix = ";";
+		separator = ";";
+		showVariables = true;
+		trimEmptyString = true;
+	} else if (modifier === '?') {
+		prefix = "?";
+		separator = "&";
+		showVariables = true;
+	} else if (modifier === '&') {
+		prefix = "&";
+		separator = "&";
+		showVariables = true;
 	}
 
-	str = str.trim().replace(/^(\?|#)/, '');
+	var varNames = [];
+	var varList = spec.split(",");
+	var varSpecs = [];
+	var varSpecMap = {};
+	for (var i = 0; i < varList.length; i++) {
+		var varName = varList[i];
+		var truncate = null;
+		if (varName.indexOf(":") !== -1) {
+			var parts = varName.split(":");
+			varName = parts[0];
+			truncate = parseInt(parts[1], 10);
+		}
+		var suffices = {};
+		while (uriTemplateSuffices[varName.charAt(varName.length - 1)]) {
+			suffices[varName.charAt(varName.length - 1)] = true;
+			varName = varName.substring(0, varName.length - 1);
+		}
+		var varSpec = {
+			truncate: truncate,
+			name: varName,
+			suffices: suffices
+		};
+		varSpecs.push(varSpec);
+		varSpecMap[varName] = varSpec;
+		varNames.push(varName);
+	}
+	var subFunction = function (valueFunction) {
+		var result = "";
+		var startIndex = 0;
+		for (var i = 0; i < varSpecs.length; i++) {
+			var varSpec = varSpecs[i];
+			var value = valueFunction(varSpec.name);
+			if (value === null || value === undefined || (Array.isArray(value) && value.length === 0) || (typeof value === 'object' && Object.keys(value).length === 0)) {
+				startIndex++;
+				continue;
+			}
+			if (i === startIndex) {
+				result += prefix;
+			} else {
+				result += (separator || ",");
+			}
+			if (Array.isArray(value)) {
+				if (showVariables) {
+					result += varSpec.name + "=";
+				}
+				for (var j = 0; j < value.length; j++) {
+					if (j > 0) {
+						result += varSpec.suffices['*'] ? (separator || ",") : ",";
+						if (varSpec.suffices['*'] && showVariables) {
+							result += varSpec.name + "=";
+						}
+					}
+					result += shouldEscape ? encodeURIComponent(value[j]).replace(/!/g, "%21") : notReallyPercentEncode(value[j]);
+				}
+			} else if (typeof value === "object") {
+				if (showVariables && !varSpec.suffices['*']) {
+					result += varSpec.name + "=";
+				}
+				var first = true;
+				for (var key in value) {
+					if (!first) {
+						result += varSpec.suffices['*'] ? (separator || ",") : ",";
+					}
+					first = false;
+					result += shouldEscape ? encodeURIComponent(key).replace(/!/g, "%21") : notReallyPercentEncode(key);
+					result += varSpec.suffices['*'] ? '=' : ",";
+					result += shouldEscape ? encodeURIComponent(value[key]).replace(/!/g, "%21") : notReallyPercentEncode(value[key]);
+				}
+			} else {
+				if (showVariables) {
+					result += varSpec.name;
+					if (!trimEmptyString || value !== "") {
+						result += "=";
+					}
+				}
+				if (varSpec.truncate != null) {
+					value = value.substring(0, varSpec.truncate);
+				}
+				result += shouldEscape ? encodeURIComponent(value).replace(/!/g, "%21"): notReallyPercentEncode(value);
+			}
+		}
+		return result;
+	};
+	subFunction.varNames = varNames;
+	return {
+		prefix: prefix,
+		substitution: subFunction
+	};
+}
 
-	if (!str) {
-		return {};
+function UriTemplate(template) {
+	if (!(this instanceof UriTemplate)) {
+		return new UriTemplate(template);
+	}
+	var parts = template.split("{");
+	var textParts = [parts.shift()];
+	var prefixes = [];
+	var substitutions = [];
+	var varNames = [];
+	while (parts.length > 0) {
+		var part = parts.shift();
+		var spec = part.split("}")[0];
+		var remainder = part.substring(spec.length + 1);
+		var funcs = uriTemplateSubstitution(spec);
+		substitutions.push(funcs.substitution);
+		prefixes.push(funcs.prefix);
+		textParts.push(remainder);
+		varNames = varNames.concat(funcs.substitution.varNames);
+	}
+	this.fill = function (valueFunction) {
+		var result = textParts[0];
+		for (var i = 0; i < substitutions.length; i++) {
+			var substitution = substitutions[i];
+			result += substitution(valueFunction);
+			result += textParts[i + 1];
+		}
+		return result;
+	};
+	this.varNames = varNames;
+	this.template = template;
+}
+UriTemplate.prototype = {
+	toString: function () {
+		return this.template;
+	},
+	fillFromObject: function (obj) {
+		return this.fill(function (varName) {
+			return obj[varName];
+		});
+	}
+};
+var ValidatorContext = function ValidatorContext(parent, collectMultiple, errorMessages, checkRecursive, trackUnknownProperties) {
+	this.missing = [];
+	this.missingMap = {};
+	this.formatValidators = parent ? Object.create(parent.formatValidators) : {};
+	this.schemas = parent ? Object.create(parent.schemas) : {};
+	this.collectMultiple = collectMultiple;
+	this.errors = [];
+	this.handleError = collectMultiple ? this.collectError : this.returnError;
+	if (checkRecursive) {
+		this.checkRecursive = true;
+		this.scanned = [];
+		this.scannedFrozen = [];
+		this.scannedFrozenSchemas = [];
+		this.scannedFrozenValidationErrors = [];
+		this.validatedSchemasKey = 'tv4_validation_id';
+		this.validationErrorsKey = 'tv4_validation_errors_id';
+	}
+	if (trackUnknownProperties) {
+		this.trackUnknownProperties = true;
+		this.knownPropertyPaths = {};
+		this.unknownPropertyPaths = {};
+	}
+	this.errorMessages = errorMessages;
+	this.definedKeywords = {};
+	if (parent) {
+		for (var key in parent.definedKeywords) {
+			this.definedKeywords[key] = parent.definedKeywords[key].slice(0);
+		}
+	}
+};
+ValidatorContext.prototype.defineKeyword = function (keyword, keywordFunction) {
+	this.definedKeywords[keyword] = this.definedKeywords[keyword] || [];
+	this.definedKeywords[keyword].push(keywordFunction);
+};
+ValidatorContext.prototype.createError = function (code, messageParams, dataPath, schemaPath, subErrors) {
+	var messageTemplate = this.errorMessages[code] || ErrorMessagesDefault[code];
+	if (typeof messageTemplate !== 'string') {
+		return new ValidationError(code, "Unknown error code " + code + ": " + JSON.stringify(messageParams), messageParams, dataPath, schemaPath, subErrors);
+	}
+	// Adapted from Crockford's supplant()
+	var message = messageTemplate.replace(/\{([^{}]*)\}/g, function (whole, varName) {
+		var subValue = messageParams[varName];
+		return typeof subValue === 'string' || typeof subValue === 'number' ? subValue : whole;
+	});
+	return new ValidationError(code, message, messageParams, dataPath, schemaPath, subErrors);
+};
+ValidatorContext.prototype.returnError = function (error) {
+	return error;
+};
+ValidatorContext.prototype.collectError = function (error) {
+	if (error) {
+		this.errors.push(error);
+	}
+	return null;
+};
+ValidatorContext.prototype.prefixErrors = function (startIndex, dataPath, schemaPath) {
+	for (var i = startIndex; i < this.errors.length; i++) {
+		this.errors[i] = this.errors[i].prefixWith(dataPath, schemaPath);
+	}
+	return this;
+};
+ValidatorContext.prototype.banUnknownProperties = function () {
+	for (var unknownPath in this.unknownPropertyPaths) {
+		var error = this.createError(ErrorCodes.UNKNOWN_PROPERTY, {path: unknownPath}, unknownPath, "");
+		var result = this.handleError(error);
+		if (result) {
+			return result;
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.addFormat = function (format, validator) {
+	if (typeof format === 'object') {
+		for (var key in format) {
+			this.addFormat(key, format[key]);
+		}
+		return this;
+	}
+	this.formatValidators[format] = validator;
+};
+ValidatorContext.prototype.resolveRefs = function (schema, urlHistory) {
+	if (schema['$ref'] !== undefined) {
+		urlHistory = urlHistory || {};
+		if (urlHistory[schema['$ref']]) {
+			return this.createError(ErrorCodes.CIRCULAR_REFERENCE, {urls: Object.keys(urlHistory).join(', ')}, '', '');
+		}
+		urlHistory[schema['$ref']] = true;
+		schema = this.getSchema(schema['$ref'], urlHistory);
+	}
+	return schema;
+};
+ValidatorContext.prototype.getSchema = function (url, urlHistory) {
+	var schema;
+	if (this.schemas[url] !== undefined) {
+		schema = this.schemas[url];
+		return this.resolveRefs(schema, urlHistory);
+	}
+	var baseUrl = url;
+	var fragment = "";
+	if (url.indexOf('#') !== -1) {
+		fragment = url.substring(url.indexOf("#") + 1);
+		baseUrl = url.substring(0, url.indexOf("#"));
+	}
+	if (typeof this.schemas[baseUrl] === 'object') {
+		schema = this.schemas[baseUrl];
+		var pointerPath = decodeURIComponent(fragment);
+		if (pointerPath === "") {
+			return this.resolveRefs(schema, urlHistory);
+		} else if (pointerPath.charAt(0) !== "/") {
+			return undefined;
+		}
+		var parts = pointerPath.split("/").slice(1);
+		for (var i = 0; i < parts.length; i++) {
+			var component = parts[i].replace(/~1/g, "/").replace(/~0/g, "~");
+			if (schema[component] === undefined) {
+				schema = undefined;
+				break;
+			}
+			schema = schema[component];
+		}
+		if (schema !== undefined) {
+			return this.resolveRefs(schema, urlHistory);
+		}
+	}
+	if (this.missing[baseUrl] === undefined) {
+		this.missing.push(baseUrl);
+		this.missing[baseUrl] = baseUrl;
+		this.missingMap[baseUrl] = baseUrl;
+	}
+};
+ValidatorContext.prototype.searchSchemas = function (schema, url) {
+	if (Array.isArray(schema)) {
+		for (var i = 0; i < schema.length; i++) {
+			this.searchSchemas(schema[i], url);
+		}
+	} else if (schema && typeof schema === "object") {
+		if (typeof schema.id === "string") {
+			if (isTrustedUrl(url, schema.id)) {
+				if (this.schemas[schema.id] === undefined) {
+					this.schemas[schema.id] = schema;
+				}
+			}
+		}
+		for (var key in schema) {
+			if (key !== "enum") {
+				if (typeof schema[key] === "object") {
+					this.searchSchemas(schema[key], url);
+				} else if (key === "$ref") {
+					var uri = getDocumentUri(schema[key]);
+					if (uri && this.schemas[uri] === undefined && this.missingMap[uri] === undefined) {
+						this.missingMap[uri] = uri;
+					}
+				}
+			}
+		}
+	}
+};
+ValidatorContext.prototype.addSchema = function (url, schema) {
+	//overload
+	if (typeof url !== 'string' || typeof schema === 'undefined') {
+		if (typeof url === 'object' && typeof url.id === 'string') {
+			schema = url;
+			url = schema.id;
+		}
+		else {
+			return;
+		}
+	}
+	if (url === getDocumentUri(url) + "#") {
+		// Remove empty fragment
+		url = getDocumentUri(url);
+	}
+	this.schemas[url] = schema;
+	delete this.missingMap[url];
+	normSchema(schema, url);
+	this.searchSchemas(schema, url);
+};
+
+ValidatorContext.prototype.getSchemaMap = function () {
+	var map = {};
+	for (var key in this.schemas) {
+		map[key] = this.schemas[key];
+	}
+	return map;
+};
+
+ValidatorContext.prototype.getSchemaUris = function (filterRegExp) {
+	var list = [];
+	for (var key in this.schemas) {
+		if (!filterRegExp || filterRegExp.test(key)) {
+			list.push(key);
+		}
+	}
+	return list;
+};
+
+ValidatorContext.prototype.getMissingUris = function (filterRegExp) {
+	var list = [];
+	for (var key in this.missingMap) {
+		if (!filterRegExp || filterRegExp.test(key)) {
+			list.push(key);
+		}
+	}
+	return list;
+};
+
+ValidatorContext.prototype.dropSchemas = function () {
+	this.schemas = {};
+	this.reset();
+};
+ValidatorContext.prototype.reset = function () {
+	this.missing = [];
+	this.missingMap = {};
+	this.errors = [];
+};
+
+ValidatorContext.prototype.validateAll = function (data, schema, dataPathParts, schemaPathParts, dataPointerPath) {
+	var topLevel;
+	schema = this.resolveRefs(schema);
+	if (!schema) {
+		return null;
+	} else if (schema instanceof ValidationError) {
+		this.errors.push(schema);
+		return schema;
 	}
 
-	return str.trim().split('&').reduce(function (ret, param) {
-		var parts = param.replace(/\+/g, ' ').split('=');
-		var key = parts[0];
-		var val = parts[1];
-
-		key = decodeURIComponent(key);
-		// missing `=` should be `null`:
-		// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
-		val = val === undefined ? null : decodeURIComponent(val);
-
-		if (!ret.hasOwnProperty(key)) {
-			ret[key] = val;
-		} else if (Array.isArray(ret[key])) {
-			ret[key].push(val);
+	var startErrorCount = this.errors.length;
+	var frozenIndex, scannedFrozenSchemaIndex = null, scannedSchemasIndex = null;
+	if (this.checkRecursive && data && typeof data === 'object') {
+		topLevel = !this.scanned.length;
+		if (data[this.validatedSchemasKey]) {
+			var schemaIndex = data[this.validatedSchemasKey].indexOf(schema);
+			if (schemaIndex !== -1) {
+				this.errors = this.errors.concat(data[this.validationErrorsKey][schemaIndex]);
+				return null;
+			}
+		}
+		if (Object.isFrozen(data)) {
+			frozenIndex = this.scannedFrozen.indexOf(data);
+			if (frozenIndex !== -1) {
+				var frozenSchemaIndex = this.scannedFrozenSchemas[frozenIndex].indexOf(schema);
+				if (frozenSchemaIndex !== -1) {
+					this.errors = this.errors.concat(this.scannedFrozenValidationErrors[frozenIndex][frozenSchemaIndex]);
+					return null;
+				}
+			}
+		}
+		this.scanned.push(data);
+		if (Object.isFrozen(data)) {
+			if (frozenIndex === -1) {
+				frozenIndex = this.scannedFrozen.length;
+				this.scannedFrozen.push(data);
+				this.scannedFrozenSchemas.push([]);
+			}
+			scannedFrozenSchemaIndex = this.scannedFrozenSchemas[frozenIndex].length;
+			this.scannedFrozenSchemas[frozenIndex][scannedFrozenSchemaIndex] = schema;
+			this.scannedFrozenValidationErrors[frozenIndex][scannedFrozenSchemaIndex] = [];
 		} else {
-			ret[key] = [ret[key], val];
+			if (!data[this.validatedSchemasKey]) {
+				try {
+					Object.defineProperty(data, this.validatedSchemasKey, {
+						value: [],
+						configurable: true
+					});
+					Object.defineProperty(data, this.validationErrorsKey, {
+						value: [],
+						configurable: true
+					});
+				} catch (e) {
+					//IE 7/8 workaround
+					data[this.validatedSchemasKey] = [];
+					data[this.validationErrorsKey] = [];
+				}
+			}
+			scannedSchemasIndex = data[this.validatedSchemasKey].length;
+			data[this.validatedSchemasKey][scannedSchemasIndex] = schema;
+			data[this.validationErrorsKey][scannedSchemasIndex] = [];
 		}
+	}
 
-		return ret;
-	}, {});
+	var errorCount = this.errors.length;
+	var error = this.validateBasic(data, schema, dataPointerPath)
+		|| this.validateNumeric(data, schema, dataPointerPath)
+		|| this.validateString(data, schema, dataPointerPath)
+		|| this.validateArray(data, schema, dataPointerPath)
+		|| this.validateObject(data, schema, dataPointerPath)
+		|| this.validateCombinations(data, schema, dataPointerPath)
+		|| this.validateHypermedia(data, schema, dataPointerPath)
+		|| this.validateFormat(data, schema, dataPointerPath)
+		|| this.validateDefinedKeywords(data, schema, dataPointerPath)
+		|| null;
+
+	if (topLevel) {
+		while (this.scanned.length) {
+			var item = this.scanned.pop();
+			delete item[this.validatedSchemasKey];
+		}
+		this.scannedFrozen = [];
+		this.scannedFrozenSchemas = [];
+	}
+
+	if (error || errorCount !== this.errors.length) {
+		while ((dataPathParts && dataPathParts.length) || (schemaPathParts && schemaPathParts.length)) {
+			var dataPart = (dataPathParts && dataPathParts.length) ? "" + dataPathParts.pop() : null;
+			var schemaPart = (schemaPathParts && schemaPathParts.length) ? "" + schemaPathParts.pop() : null;
+			if (error) {
+				error = error.prefixWith(dataPart, schemaPart);
+			}
+			this.prefixErrors(errorCount, dataPart, schemaPart);
+		}
+	}
+
+	if (scannedFrozenSchemaIndex !== null) {
+		this.scannedFrozenValidationErrors[frozenIndex][scannedFrozenSchemaIndex] = this.errors.slice(startErrorCount);
+	} else if (scannedSchemasIndex !== null) {
+		data[this.validationErrorsKey][scannedSchemasIndex] = this.errors.slice(startErrorCount);
+	}
+
+	return this.handleError(error);
+};
+ValidatorContext.prototype.validateFormat = function (data, schema) {
+	if (typeof schema.format !== 'string' || !this.formatValidators[schema.format]) {
+		return null;
+	}
+	var errorMessage = this.formatValidators[schema.format].call(null, data, schema);
+	if (typeof errorMessage === 'string' || typeof errorMessage === 'number') {
+		return this.createError(ErrorCodes.FORMAT_CUSTOM, {message: errorMessage}).prefixWith(null, "format");
+	} else if (errorMessage && typeof errorMessage === 'object') {
+		return this.createError(ErrorCodes.FORMAT_CUSTOM, {message: errorMessage.message || "?"}, errorMessage.dataPath || null, errorMessage.schemaPath || "/format");
+	}
+	return null;
+};
+ValidatorContext.prototype.validateDefinedKeywords = function (data, schema, dataPointerPath) {
+	for (var key in this.definedKeywords) {
+		if (typeof schema[key] === 'undefined') {
+			continue;
+		}
+		var validationFunctions = this.definedKeywords[key];
+		for (var i = 0; i < validationFunctions.length; i++) {
+			var func = validationFunctions[i];
+			var result = func(data, schema[key], schema, dataPointerPath);
+			if (typeof result === 'string' || typeof result === 'number') {
+				return this.createError(ErrorCodes.KEYWORD_CUSTOM, {key: key, message: result}).prefixWith(null, "format");
+			} else if (result && typeof result === 'object') {
+				var code = result.code;
+				if (typeof code === 'string') {
+					if (!ErrorCodes[code]) {
+						throw new Error('Undefined error code (use defineError): ' + code);
+					}
+					code = ErrorCodes[code];
+				} else if (typeof code !== 'number') {
+					code = ErrorCodes.KEYWORD_CUSTOM;
+				}
+				var messageParams = (typeof result.message === 'object') ? result.message : {key: key, message: result.message || "?"};
+				var schemaPath = result.schemaPath ||( "/" + key.replace(/~/g, '~0').replace(/\//g, '~1'));
+				return this.createError(code, messageParams, result.dataPath || null, schemaPath);
+			}
+		}
+	}
+	return null;
 };
 
-exports.stringify = function (obj) {
-	return obj ? Object.keys(obj).sort().map(function (key) {
-		var val = obj[key];
-
-		if (Array.isArray(val)) {
-			return val.sort().map(function (val2) {
-				return encodeURIComponent(key) + '=' + encodeURIComponent(val2);
-			}).join('&');
+function recursiveCompare(A, B) {
+	if (A === B) {
+		return true;
+	}
+	if (typeof A === "object" && typeof B === "object") {
+		if (Array.isArray(A) !== Array.isArray(B)) {
+			return false;
+		} else if (Array.isArray(A)) {
+			if (A.length !== B.length) {
+				return false;
+			}
+			for (var i = 0; i < A.length; i++) {
+				if (!recursiveCompare(A[i], B[i])) {
+					return false;
+				}
+			}
+		} else {
+			var key;
+			for (key in A) {
+				if (B[key] === undefined && A[key] !== undefined) {
+					return false;
+				}
+			}
+			for (key in B) {
+				if (A[key] === undefined && B[key] !== undefined) {
+					return false;
+				}
+			}
+			for (key in A) {
+				if (!recursiveCompare(A[key], B[key])) {
+					return false;
+				}
+			}
 		}
+		return true;
+	}
+	return false;
+}
 
-		return encodeURIComponent(key) + '=' + encodeURIComponent(val);
-	}).join('&') : '';
+ValidatorContext.prototype.validateBasic = function validateBasic(data, schema, dataPointerPath) {
+	var error;
+	if (error = this.validateType(data, schema, dataPointerPath)) {
+		return error.prefixWith(null, "type");
+	}
+	if (error = this.validateEnum(data, schema, dataPointerPath)) {
+		return error.prefixWith(null, "type");
+	}
+	return null;
 };
 
-},{}],6:[function(require,module,exports){
+ValidatorContext.prototype.validateType = function validateType(data, schema) {
+	if (schema.type === undefined) {
+		return null;
+	}
+	var dataType = typeof data;
+	if (data === null) {
+		dataType = "null";
+	} else if (Array.isArray(data)) {
+		dataType = "array";
+	}
+	var allowedTypes = schema.type;
+	if (typeof allowedTypes !== "object") {
+		allowedTypes = [allowedTypes];
+	}
+
+	for (var i = 0; i < allowedTypes.length; i++) {
+		var type = allowedTypes[i];
+		if (type === dataType || (type === "integer" && dataType === "number" && (data % 1 === 0))) {
+			return null;
+		}
+	}
+	return this.createError(ErrorCodes.INVALID_TYPE, {type: dataType, expected: allowedTypes.join("/")});
+};
+
+ValidatorContext.prototype.validateEnum = function validateEnum(data, schema) {
+	if (schema["enum"] === undefined) {
+		return null;
+	}
+	for (var i = 0; i < schema["enum"].length; i++) {
+		var enumVal = schema["enum"][i];
+		if (recursiveCompare(data, enumVal)) {
+			return null;
+		}
+	}
+	return this.createError(ErrorCodes.ENUM_MISMATCH, {value: (typeof JSON !== 'undefined') ? JSON.stringify(data) : data});
+};
+
+ValidatorContext.prototype.validateNumeric = function validateNumeric(data, schema, dataPointerPath) {
+	return this.validateMultipleOf(data, schema, dataPointerPath)
+		|| this.validateMinMax(data, schema, dataPointerPath)
+		|| this.validateNaN(data, schema, dataPointerPath)
+		|| null;
+};
+
+var CLOSE_ENOUGH_LOW = Math.pow(2, -51);
+var CLOSE_ENOUGH_HIGH = 1 - CLOSE_ENOUGH_LOW;
+ValidatorContext.prototype.validateMultipleOf = function validateMultipleOf(data, schema) {
+	var multipleOf = schema.multipleOf || schema.divisibleBy;
+	if (multipleOf === undefined) {
+		return null;
+	}
+	if (typeof data === "number") {
+		var remainder = (data/multipleOf)%1;
+		if (remainder >= CLOSE_ENOUGH_LOW && remainder < CLOSE_ENOUGH_HIGH) {
+			return this.createError(ErrorCodes.NUMBER_MULTIPLE_OF, {value: data, multipleOf: multipleOf});
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateMinMax = function validateMinMax(data, schema) {
+	if (typeof data !== "number") {
+		return null;
+	}
+	if (schema.minimum !== undefined) {
+		if (data < schema.minimum) {
+			return this.createError(ErrorCodes.NUMBER_MINIMUM, {value: data, minimum: schema.minimum}).prefixWith(null, "minimum");
+		}
+		if (schema.exclusiveMinimum && data === schema.minimum) {
+			return this.createError(ErrorCodes.NUMBER_MINIMUM_EXCLUSIVE, {value: data, minimum: schema.minimum}).prefixWith(null, "exclusiveMinimum");
+		}
+	}
+	if (schema.maximum !== undefined) {
+		if (data > schema.maximum) {
+			return this.createError(ErrorCodes.NUMBER_MAXIMUM, {value: data, maximum: schema.maximum}).prefixWith(null, "maximum");
+		}
+		if (schema.exclusiveMaximum && data === schema.maximum) {
+			return this.createError(ErrorCodes.NUMBER_MAXIMUM_EXCLUSIVE, {value: data, maximum: schema.maximum}).prefixWith(null, "exclusiveMaximum");
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateNaN = function validateNaN(data) {
+	if (typeof data !== "number") {
+		return null;
+	}
+	if (isNaN(data) === true || data === Infinity || data === -Infinity) {
+		return this.createError(ErrorCodes.NUMBER_NOT_A_NUMBER, {value: data}).prefixWith(null, "type");
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateString = function validateString(data, schema, dataPointerPath) {
+	return this.validateStringLength(data, schema, dataPointerPath)
+		|| this.validateStringPattern(data, schema, dataPointerPath)
+		|| null;
+};
+
+ValidatorContext.prototype.validateStringLength = function validateStringLength(data, schema) {
+	if (typeof data !== "string") {
+		return null;
+	}
+	if (schema.minLength !== undefined) {
+		if (data.length < schema.minLength) {
+			return this.createError(ErrorCodes.STRING_LENGTH_SHORT, {length: data.length, minimum: schema.minLength}).prefixWith(null, "minLength");
+		}
+	}
+	if (schema.maxLength !== undefined) {
+		if (data.length > schema.maxLength) {
+			return this.createError(ErrorCodes.STRING_LENGTH_LONG, {length: data.length, maximum: schema.maxLength}).prefixWith(null, "maxLength");
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateStringPattern = function validateStringPattern(data, schema) {
+	if (typeof data !== "string" || schema.pattern === undefined) {
+		return null;
+	}
+	var regexp = new RegExp(schema.pattern);
+	if (!regexp.test(data)) {
+		return this.createError(ErrorCodes.STRING_PATTERN, {pattern: schema.pattern}).prefixWith(null, "pattern");
+	}
+	return null;
+};
+ValidatorContext.prototype.validateArray = function validateArray(data, schema, dataPointerPath) {
+	if (!Array.isArray(data)) {
+		return null;
+	}
+	return this.validateArrayLength(data, schema, dataPointerPath)
+		|| this.validateArrayUniqueItems(data, schema, dataPointerPath)
+		|| this.validateArrayItems(data, schema, dataPointerPath)
+		|| null;
+};
+
+ValidatorContext.prototype.validateArrayLength = function validateArrayLength(data, schema) {
+	var error;
+	if (schema.minItems !== undefined) {
+		if (data.length < schema.minItems) {
+			error = (this.createError(ErrorCodes.ARRAY_LENGTH_SHORT, {length: data.length, minimum: schema.minItems})).prefixWith(null, "minItems");
+			if (this.handleError(error)) {
+				return error;
+			}
+		}
+	}
+	if (schema.maxItems !== undefined) {
+		if (data.length > schema.maxItems) {
+			error = (this.createError(ErrorCodes.ARRAY_LENGTH_LONG, {length: data.length, maximum: schema.maxItems})).prefixWith(null, "maxItems");
+			if (this.handleError(error)) {
+				return error;
+			}
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateArrayUniqueItems = function validateArrayUniqueItems(data, schema) {
+	if (schema.uniqueItems) {
+		for (var i = 0; i < data.length; i++) {
+			for (var j = i + 1; j < data.length; j++) {
+				if (recursiveCompare(data[i], data[j])) {
+					var error = (this.createError(ErrorCodes.ARRAY_UNIQUE, {match1: i, match2: j})).prefixWith(null, "uniqueItems");
+					if (this.handleError(error)) {
+						return error;
+					}
+				}
+			}
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateArrayItems = function validateArrayItems(data, schema, dataPointerPath) {
+	if (schema.items === undefined) {
+		return null;
+	}
+	var error, i;
+	if (Array.isArray(schema.items)) {
+		for (i = 0; i < data.length; i++) {
+			if (i < schema.items.length) {
+				if (error = this.validateAll(data[i], schema.items[i], [i], ["items", i], dataPointerPath + "/" + i)) {
+					return error;
+				}
+			} else if (schema.additionalItems !== undefined) {
+				if (typeof schema.additionalItems === "boolean") {
+					if (!schema.additionalItems) {
+						error = (this.createError(ErrorCodes.ARRAY_ADDITIONAL_ITEMS, {})).prefixWith("" + i, "additionalItems");
+						if (this.handleError(error)) {
+							return error;
+						}
+					}
+				} else if (error = this.validateAll(data[i], schema.additionalItems, [i], ["additionalItems"], dataPointerPath + "/" + i)) {
+					return error;
+				}
+			}
+		}
+	} else {
+		for (i = 0; i < data.length; i++) {
+			if (error = this.validateAll(data[i], schema.items, [i], ["items"], dataPointerPath + "/" + i)) {
+				return error;
+			}
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateObject = function validateObject(data, schema, dataPointerPath) {
+	if (typeof data !== "object" || data === null || Array.isArray(data)) {
+		return null;
+	}
+	return this.validateObjectMinMaxProperties(data, schema, dataPointerPath)
+		|| this.validateObjectRequiredProperties(data, schema, dataPointerPath)
+		|| this.validateObjectProperties(data, schema, dataPointerPath)
+		|| this.validateObjectDependencies(data, schema, dataPointerPath)
+		|| null;
+};
+
+ValidatorContext.prototype.validateObjectMinMaxProperties = function validateObjectMinMaxProperties(data, schema) {
+	var keys = Object.keys(data);
+	var error;
+	if (schema.minProperties !== undefined) {
+		if (keys.length < schema.minProperties) {
+			error = this.createError(ErrorCodes.OBJECT_PROPERTIES_MINIMUM, {propertyCount: keys.length, minimum: schema.minProperties}).prefixWith(null, "minProperties");
+			if (this.handleError(error)) {
+				return error;
+			}
+		}
+	}
+	if (schema.maxProperties !== undefined) {
+		if (keys.length > schema.maxProperties) {
+			error = this.createError(ErrorCodes.OBJECT_PROPERTIES_MAXIMUM, {propertyCount: keys.length, maximum: schema.maxProperties}).prefixWith(null, "maxProperties");
+			if (this.handleError(error)) {
+				return error;
+			}
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateObjectRequiredProperties = function validateObjectRequiredProperties(data, schema) {
+	if (schema.required !== undefined) {
+		for (var i = 0; i < schema.required.length; i++) {
+			var key = schema.required[i];
+			if (data[key] === undefined) {
+				var error = this.createError(ErrorCodes.OBJECT_REQUIRED, {key: key}).prefixWith(null, "" + i).prefixWith(null, "required");
+				if (this.handleError(error)) {
+					return error;
+				}
+			}
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateObjectProperties = function validateObjectProperties(data, schema, dataPointerPath) {
+	var error;
+	for (var key in data) {
+		var keyPointerPath = dataPointerPath + "/" + key.replace(/~/g, '~0').replace(/\//g, '~1');
+		var foundMatch = false;
+		if (schema.properties !== undefined && schema.properties[key] !== undefined) {
+			foundMatch = true;
+			if (error = this.validateAll(data[key], schema.properties[key], [key], ["properties", key], keyPointerPath)) {
+				return error;
+			}
+		}
+		if (schema.patternProperties !== undefined) {
+			for (var patternKey in schema.patternProperties) {
+				var regexp = new RegExp(patternKey);
+				if (regexp.test(key)) {
+					foundMatch = true;
+					if (error = this.validateAll(data[key], schema.patternProperties[patternKey], [key], ["patternProperties", patternKey], keyPointerPath)) {
+						return error;
+					}
+				}
+			}
+		}
+		if (!foundMatch) {
+			if (schema.additionalProperties !== undefined) {
+				if (this.trackUnknownProperties) {
+					this.knownPropertyPaths[keyPointerPath] = true;
+					delete this.unknownPropertyPaths[keyPointerPath];
+				}
+				if (typeof schema.additionalProperties === "boolean") {
+					if (!schema.additionalProperties) {
+						error = this.createError(ErrorCodes.OBJECT_ADDITIONAL_PROPERTIES, {}).prefixWith(key, "additionalProperties");
+						if (this.handleError(error)) {
+							return error;
+						}
+					}
+				} else {
+					if (error = this.validateAll(data[key], schema.additionalProperties, [key], ["additionalProperties"], keyPointerPath)) {
+						return error;
+					}
+				}
+			} else if (this.trackUnknownProperties && !this.knownPropertyPaths[keyPointerPath]) {
+				this.unknownPropertyPaths[keyPointerPath] = true;
+			}
+		} else if (this.trackUnknownProperties) {
+			this.knownPropertyPaths[keyPointerPath] = true;
+			delete this.unknownPropertyPaths[keyPointerPath];
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateObjectDependencies = function validateObjectDependencies(data, schema, dataPointerPath) {
+	var error;
+	if (schema.dependencies !== undefined) {
+		for (var depKey in schema.dependencies) {
+			if (data[depKey] !== undefined) {
+				var dep = schema.dependencies[depKey];
+				if (typeof dep === "string") {
+					if (data[dep] === undefined) {
+						error = this.createError(ErrorCodes.OBJECT_DEPENDENCY_KEY, {key: depKey, missing: dep}).prefixWith(null, depKey).prefixWith(null, "dependencies");
+						if (this.handleError(error)) {
+							return error;
+						}
+					}
+				} else if (Array.isArray(dep)) {
+					for (var i = 0; i < dep.length; i++) {
+						var requiredKey = dep[i];
+						if (data[requiredKey] === undefined) {
+							error = this.createError(ErrorCodes.OBJECT_DEPENDENCY_KEY, {key: depKey, missing: requiredKey}).prefixWith(null, "" + i).prefixWith(null, depKey).prefixWith(null, "dependencies");
+							if (this.handleError(error)) {
+								return error;
+							}
+						}
+					}
+				} else {
+					if (error = this.validateAll(data, dep, [], ["dependencies", depKey], dataPointerPath)) {
+						return error;
+					}
+				}
+			}
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateCombinations = function validateCombinations(data, schema, dataPointerPath) {
+	return this.validateAllOf(data, schema, dataPointerPath)
+		|| this.validateAnyOf(data, schema, dataPointerPath)
+		|| this.validateOneOf(data, schema, dataPointerPath)
+		|| this.validateNot(data, schema, dataPointerPath)
+		|| null;
+};
+
+ValidatorContext.prototype.validateAllOf = function validateAllOf(data, schema, dataPointerPath) {
+	if (schema.allOf === undefined) {
+		return null;
+	}
+	var error;
+	for (var i = 0; i < schema.allOf.length; i++) {
+		var subSchema = schema.allOf[i];
+		if (error = this.validateAll(data, subSchema, [], ["allOf", i], dataPointerPath)) {
+			return error;
+		}
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateAnyOf = function validateAnyOf(data, schema, dataPointerPath) {
+	if (schema.anyOf === undefined) {
+		return null;
+	}
+	var errors = [];
+	var startErrorCount = this.errors.length;
+	var oldUnknownPropertyPaths, oldKnownPropertyPaths;
+	if (this.trackUnknownProperties) {
+		oldUnknownPropertyPaths = this.unknownPropertyPaths;
+		oldKnownPropertyPaths = this.knownPropertyPaths;
+	}
+	var errorAtEnd = true;
+	for (var i = 0; i < schema.anyOf.length; i++) {
+		if (this.trackUnknownProperties) {
+			this.unknownPropertyPaths = {};
+			this.knownPropertyPaths = {};
+		}
+		var subSchema = schema.anyOf[i];
+
+		var errorCount = this.errors.length;
+		var error = this.validateAll(data, subSchema, [], ["anyOf", i], dataPointerPath);
+
+		if (error === null && errorCount === this.errors.length) {
+			this.errors = this.errors.slice(0, startErrorCount);
+
+			if (this.trackUnknownProperties) {
+				for (var knownKey in this.knownPropertyPaths) {
+					oldKnownPropertyPaths[knownKey] = true;
+					delete oldUnknownPropertyPaths[knownKey];
+				}
+				for (var unknownKey in this.unknownPropertyPaths) {
+					if (!oldKnownPropertyPaths[unknownKey]) {
+						oldUnknownPropertyPaths[unknownKey] = true;
+					}
+				}
+				// We need to continue looping so we catch all the property definitions, but we don't want to return an error
+				errorAtEnd = false;
+				continue;
+			}
+
+			return null;
+		}
+		if (error) {
+			errors.push(error.prefixWith(null, "" + i).prefixWith(null, "anyOf"));
+		}
+	}
+	if (this.trackUnknownProperties) {
+		this.unknownPropertyPaths = oldUnknownPropertyPaths;
+		this.knownPropertyPaths = oldKnownPropertyPaths;
+	}
+	if (errorAtEnd) {
+		errors = errors.concat(this.errors.slice(startErrorCount));
+		this.errors = this.errors.slice(0, startErrorCount);
+		return this.createError(ErrorCodes.ANY_OF_MISSING, {}, "", "/anyOf", errors);
+	}
+};
+
+ValidatorContext.prototype.validateOneOf = function validateOneOf(data, schema, dataPointerPath) {
+	if (schema.oneOf === undefined) {
+		return null;
+	}
+	var validIndex = null;
+	var errors = [];
+	var startErrorCount = this.errors.length;
+	var oldUnknownPropertyPaths, oldKnownPropertyPaths;
+	if (this.trackUnknownProperties) {
+		oldUnknownPropertyPaths = this.unknownPropertyPaths;
+		oldKnownPropertyPaths = this.knownPropertyPaths;
+	}
+	for (var i = 0; i < schema.oneOf.length; i++) {
+		if (this.trackUnknownProperties) {
+			this.unknownPropertyPaths = {};
+			this.knownPropertyPaths = {};
+		}
+		var subSchema = schema.oneOf[i];
+
+		var errorCount = this.errors.length;
+		var error = this.validateAll(data, subSchema, [], ["oneOf", i], dataPointerPath);
+
+		if (error === null && errorCount === this.errors.length) {
+			if (validIndex === null) {
+				validIndex = i;
+			} else {
+				this.errors = this.errors.slice(0, startErrorCount);
+				return this.createError(ErrorCodes.ONE_OF_MULTIPLE, {index1: validIndex, index2: i}, "", "/oneOf");
+			}
+			if (this.trackUnknownProperties) {
+				for (var knownKey in this.knownPropertyPaths) {
+					oldKnownPropertyPaths[knownKey] = true;
+					delete oldUnknownPropertyPaths[knownKey];
+				}
+				for (var unknownKey in this.unknownPropertyPaths) {
+					if (!oldKnownPropertyPaths[unknownKey]) {
+						oldUnknownPropertyPaths[unknownKey] = true;
+					}
+				}
+			}
+		} else if (error) {
+			errors.push(error);
+		}
+	}
+	if (this.trackUnknownProperties) {
+		this.unknownPropertyPaths = oldUnknownPropertyPaths;
+		this.knownPropertyPaths = oldKnownPropertyPaths;
+	}
+	if (validIndex === null) {
+		errors = errors.concat(this.errors.slice(startErrorCount));
+		this.errors = this.errors.slice(0, startErrorCount);
+		return this.createError(ErrorCodes.ONE_OF_MISSING, {}, "", "/oneOf", errors);
+	} else {
+		this.errors = this.errors.slice(0, startErrorCount);
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateNot = function validateNot(data, schema, dataPointerPath) {
+	if (schema.not === undefined) {
+		return null;
+	}
+	var oldErrorCount = this.errors.length;
+	var oldUnknownPropertyPaths, oldKnownPropertyPaths;
+	if (this.trackUnknownProperties) {
+		oldUnknownPropertyPaths = this.unknownPropertyPaths;
+		oldKnownPropertyPaths = this.knownPropertyPaths;
+		this.unknownPropertyPaths = {};
+		this.knownPropertyPaths = {};
+	}
+	var error = this.validateAll(data, schema.not, null, null, dataPointerPath);
+	var notErrors = this.errors.slice(oldErrorCount);
+	this.errors = this.errors.slice(0, oldErrorCount);
+	if (this.trackUnknownProperties) {
+		this.unknownPropertyPaths = oldUnknownPropertyPaths;
+		this.knownPropertyPaths = oldKnownPropertyPaths;
+	}
+	if (error === null && notErrors.length === 0) {
+		return this.createError(ErrorCodes.NOT_PASSED, {}, "", "/not");
+	}
+	return null;
+};
+
+ValidatorContext.prototype.validateHypermedia = function validateCombinations(data, schema, dataPointerPath) {
+	if (!schema.links) {
+		return null;
+	}
+	var error;
+	for (var i = 0; i < schema.links.length; i++) {
+		var ldo = schema.links[i];
+		if (ldo.rel === "describedby") {
+			var template = new UriTemplate(ldo.href);
+			var allPresent = true;
+			for (var j = 0; j < template.varNames.length; j++) {
+				if (!(template.varNames[j] in data)) {
+					allPresent = false;
+					break;
+				}
+			}
+			if (allPresent) {
+				var schemaUrl = template.fillFromObject(data);
+				var subSchema = {"$ref": schemaUrl};
+				if (error = this.validateAll(data, subSchema, [], ["links", i], dataPointerPath)) {
+					return error;
+				}
+			}
+		}
+	}
+};
+
+// parseURI() and resolveUrl() are from https://gist.github.com/1088850
+//   -  released as public domain by author ("Yaffle") - see comments on gist
+
+function parseURI(url) {
+	var m = String(url).replace(/^\s+|\s+$/g, '').match(/^([^:\/?#]+:)?(\/\/(?:[^:@]*(?::[^:@]*)?@)?(([^:\/?#]*)(?::(\d*))?))?([^?#]*)(\?[^#]*)?(#[\s\S]*)?/);
+	// authority = '//' + user + ':' + pass '@' + hostname + ':' port
+	return (m ? {
+		href     : m[0] || '',
+		protocol : m[1] || '',
+		authority: m[2] || '',
+		host     : m[3] || '',
+		hostname : m[4] || '',
+		port     : m[5] || '',
+		pathname : m[6] || '',
+		search   : m[7] || '',
+		hash     : m[8] || ''
+	} : null);
+}
+
+function resolveUrl(base, href) {// RFC 3986
+
+	function removeDotSegments(input) {
+		var output = [];
+		input.replace(/^(\.\.?(\/|$))+/, '')
+			.replace(/\/(\.(\/|$))+/g, '/')
+			.replace(/\/\.\.$/, '/../')
+			.replace(/\/?[^\/]*/g, function (p) {
+				if (p === '/..') {
+					output.pop();
+				} else {
+					output.push(p);
+				}
+		});
+		return output.join('').replace(/^\//, input.charAt(0) === '/' ? '/' : '');
+	}
+
+	href = parseURI(href || '');
+	base = parseURI(base || '');
+
+	return !href || !base ? null : (href.protocol || base.protocol) +
+		(href.protocol || href.authority ? href.authority : base.authority) +
+		removeDotSegments(href.protocol || href.authority || href.pathname.charAt(0) === '/' ? href.pathname : (href.pathname ? ((base.authority && !base.pathname ? '/' : '') + base.pathname.slice(0, base.pathname.lastIndexOf('/') + 1) + href.pathname) : base.pathname)) +
+		(href.protocol || href.authority || href.pathname ? href.search : (href.search || base.search)) +
+		href.hash;
+}
+
+function getDocumentUri(uri) {
+	return uri.split('#')[0];
+}
+function normSchema(schema, baseUri) {
+	if (schema && typeof schema === "object") {
+		if (baseUri === undefined) {
+			baseUri = schema.id;
+		} else if (typeof schema.id === "string") {
+			baseUri = resolveUrl(baseUri, schema.id);
+			schema.id = baseUri;
+		}
+		if (Array.isArray(schema)) {
+			for (var i = 0; i < schema.length; i++) {
+				normSchema(schema[i], baseUri);
+			}
+		} else {
+			if (typeof schema['$ref'] === "string") {
+				schema['$ref'] = resolveUrl(baseUri, schema['$ref']);
+			}
+			for (var key in schema) {
+				if (key !== "enum") {
+					normSchema(schema[key], baseUri);
+				}
+			}
+		}
+	}
+}
+
+var ErrorCodes = {
+	INVALID_TYPE: 0,
+	ENUM_MISMATCH: 1,
+	ANY_OF_MISSING: 10,
+	ONE_OF_MISSING: 11,
+	ONE_OF_MULTIPLE: 12,
+	NOT_PASSED: 13,
+	// Numeric errors
+	NUMBER_MULTIPLE_OF: 100,
+	NUMBER_MINIMUM: 101,
+	NUMBER_MINIMUM_EXCLUSIVE: 102,
+	NUMBER_MAXIMUM: 103,
+	NUMBER_MAXIMUM_EXCLUSIVE: 104,
+	NUMBER_NOT_A_NUMBER: 105,
+	// String errors
+	STRING_LENGTH_SHORT: 200,
+	STRING_LENGTH_LONG: 201,
+	STRING_PATTERN: 202,
+	// Object errors
+	OBJECT_PROPERTIES_MINIMUM: 300,
+	OBJECT_PROPERTIES_MAXIMUM: 301,
+	OBJECT_REQUIRED: 302,
+	OBJECT_ADDITIONAL_PROPERTIES: 303,
+	OBJECT_DEPENDENCY_KEY: 304,
+	// Array errors
+	ARRAY_LENGTH_SHORT: 400,
+	ARRAY_LENGTH_LONG: 401,
+	ARRAY_UNIQUE: 402,
+	ARRAY_ADDITIONAL_ITEMS: 403,
+	// Custom/user-defined errors
+	FORMAT_CUSTOM: 500,
+	KEYWORD_CUSTOM: 501,
+	// Schema structure
+	CIRCULAR_REFERENCE: 600,
+	// Non-standard validation options
+	UNKNOWN_PROPERTY: 1000
+};
+var ErrorCodeLookup = {};
+for (var key in ErrorCodes) {
+	ErrorCodeLookup[ErrorCodes[key]] = key;
+}
+var ErrorMessagesDefault = {
+	INVALID_TYPE: "Invalid type: {type} (expected {expected})",
+	ENUM_MISMATCH: "No enum match for: {value}",
+	ANY_OF_MISSING: "Data does not match any schemas from \"anyOf\"",
+	ONE_OF_MISSING: "Data does not match any schemas from \"oneOf\"",
+	ONE_OF_MULTIPLE: "Data is valid against more than one schema from \"oneOf\": indices {index1} and {index2}",
+	NOT_PASSED: "Data matches schema from \"not\"",
+	// Numeric errors
+	NUMBER_MULTIPLE_OF: "Value {value} is not a multiple of {multipleOf}",
+	NUMBER_MINIMUM: "Value {value} is less than minimum {minimum}",
+	NUMBER_MINIMUM_EXCLUSIVE: "Value {value} is equal to exclusive minimum {minimum}",
+	NUMBER_MAXIMUM: "Value {value} is greater than maximum {maximum}",
+	NUMBER_MAXIMUM_EXCLUSIVE: "Value {value} is equal to exclusive maximum {maximum}",
+	NUMBER_NOT_A_NUMBER: "Value {value} is not a valid number",
+	// String errors
+	STRING_LENGTH_SHORT: "String is too short ({length} chars), minimum {minimum}",
+	STRING_LENGTH_LONG: "String is too long ({length} chars), maximum {maximum}",
+	STRING_PATTERN: "String does not match pattern: {pattern}",
+	// Object errors
+	OBJECT_PROPERTIES_MINIMUM: "Too few properties defined ({propertyCount}), minimum {minimum}",
+	OBJECT_PROPERTIES_MAXIMUM: "Too many properties defined ({propertyCount}), maximum {maximum}",
+	OBJECT_REQUIRED: "Missing required property: {key}",
+	OBJECT_ADDITIONAL_PROPERTIES: "Additional properties not allowed",
+	OBJECT_DEPENDENCY_KEY: "Dependency failed - key must exist: {missing} (due to key: {key})",
+	// Array errors
+	ARRAY_LENGTH_SHORT: "Array is too short ({length}), minimum {minimum}",
+	ARRAY_LENGTH_LONG: "Array is too long ({length}), maximum {maximum}",
+	ARRAY_UNIQUE: "Array items are not unique (indices {match1} and {match2})",
+	ARRAY_ADDITIONAL_ITEMS: "Additional items not allowed",
+	// Format errors
+	FORMAT_CUSTOM: "Format validation failed ({message})",
+	KEYWORD_CUSTOM: "Keyword failed: {key} ({message})",
+	// Schema structure
+	CIRCULAR_REFERENCE: "Circular $refs: {urls}",
+	// Non-standard validation options
+	UNKNOWN_PROPERTY: "Unknown property (not in schema)"
+};
+
+function ValidationError(code, message, params, dataPath, schemaPath, subErrors) {
+	Error.call(this);
+	if (code === undefined) {
+		throw new Error ("No code supplied for error: "+ message);
+	}
+	this.message = message;
+	this.params = params;
+	this.code = code;
+	this.dataPath = dataPath || "";
+	this.schemaPath = schemaPath || "";
+	this.subErrors = subErrors || null;
+
+	var err = new Error(this.message);
+	this.stack = err.stack || err.stacktrace;
+	if (!this.stack) {
+		try {
+			throw err;
+		}
+		catch(err) {
+			this.stack = err.stack || err.stacktrace;
+		}
+	}
+}
+ValidationError.prototype = Object.create(Error.prototype);
+ValidationError.prototype.constructor = ValidationError;
+ValidationError.prototype.name = 'ValidationError';
+
+ValidationError.prototype.prefixWith = function (dataPrefix, schemaPrefix) {
+	if (dataPrefix !== null) {
+		dataPrefix = dataPrefix.replace(/~/g, "~0").replace(/\//g, "~1");
+		this.dataPath = "/" + dataPrefix + this.dataPath;
+	}
+	if (schemaPrefix !== null) {
+		schemaPrefix = schemaPrefix.replace(/~/g, "~0").replace(/\//g, "~1");
+		this.schemaPath = "/" + schemaPrefix + this.schemaPath;
+	}
+	if (this.subErrors !== null) {
+		for (var i = 0; i < this.subErrors.length; i++) {
+			this.subErrors[i].prefixWith(dataPrefix, schemaPrefix);
+		}
+	}
+	return this;
+};
+
+function isTrustedUrl(baseUrl, testUrl) {
+	if(testUrl.substring(0, baseUrl.length) === baseUrl){
+		var remainder = testUrl.substring(baseUrl.length);
+		if ((testUrl.length > 0 && testUrl.charAt(baseUrl.length - 1) === "/")
+			|| remainder.charAt(0) === "#"
+			|| remainder.charAt(0) === "?") {
+			return true;
+		}
+	}
+	return false;
+}
+
+var languages = {};
+function createApi(language) {
+	var globalContext = new ValidatorContext();
+	var currentLanguage = language || 'en';
+	var api = {
+		addFormat: function () {
+			globalContext.addFormat.apply(globalContext, arguments);
+		},
+		language: function (code) {
+			if (!code) {
+				return currentLanguage;
+			}
+			if (!languages[code]) {
+				code = code.split('-')[0]; // fall back to base language
+			}
+			if (languages[code]) {
+				currentLanguage = code;
+				return code; // so you can tell if fall-back has happened
+			}
+			return false;
+		},
+		addLanguage: function (code, messageMap) {
+			var key;
+			for (key in ErrorCodes) {
+				if (messageMap[key] && !messageMap[ErrorCodes[key]]) {
+					messageMap[ErrorCodes[key]] = messageMap[key];
+				}
+			}
+			var rootCode = code.split('-')[0];
+			if (!languages[rootCode]) { // use for base language if not yet defined
+				languages[code] = messageMap;
+				languages[rootCode] = messageMap;
+			} else {
+				languages[code] = Object.create(languages[rootCode]);
+				for (key in messageMap) {
+					if (typeof languages[rootCode][key] === 'undefined') {
+						languages[rootCode][key] = messageMap[key];
+					}
+					languages[code][key] = messageMap[key];
+				}
+			}
+			return this;
+		},
+		freshApi: function (language) {
+			var result = createApi();
+			if (language) {
+				result.language(language);
+			}
+			return result;
+		},
+		validate: function (data, schema, checkRecursive, banUnknownProperties) {
+			var context = new ValidatorContext(globalContext, false, languages[currentLanguage], checkRecursive, banUnknownProperties);
+			if (typeof schema === "string") {
+				schema = {"$ref": schema};
+			}
+			context.addSchema("", schema);
+			var error = context.validateAll(data, schema, null, null, "");
+			if (!error && banUnknownProperties) {
+				error = context.banUnknownProperties();
+			}
+			this.error = error;
+			this.missing = context.missing;
+			this.valid = (error === null);
+			return this.valid;
+		},
+		validateResult: function () {
+			var result = {};
+			this.validate.apply(result, arguments);
+			return result;
+		},
+		validateMultiple: function (data, schema, checkRecursive, banUnknownProperties) {
+			var context = new ValidatorContext(globalContext, true, languages[currentLanguage], checkRecursive, banUnknownProperties);
+			if (typeof schema === "string") {
+				schema = {"$ref": schema};
+			}
+			context.addSchema("", schema);
+			context.validateAll(data, schema, null, null, "");
+			if (banUnknownProperties) {
+				context.banUnknownProperties();
+			}
+			var result = {};
+			result.errors = context.errors;
+			result.missing = context.missing;
+			result.valid = (result.errors.length === 0);
+			return result;
+		},
+		addSchema: function () {
+			return globalContext.addSchema.apply(globalContext, arguments);
+		},
+		getSchema: function () {
+			return globalContext.getSchema.apply(globalContext, arguments);
+		},
+		getSchemaMap: function () {
+			return globalContext.getSchemaMap.apply(globalContext, arguments);
+		},
+		getSchemaUris: function () {
+			return globalContext.getSchemaUris.apply(globalContext, arguments);
+		},
+		getMissingUris: function () {
+			return globalContext.getMissingUris.apply(globalContext, arguments);
+		},
+		dropSchemas: function () {
+			globalContext.dropSchemas.apply(globalContext, arguments);
+		},
+		defineKeyword: function () {
+			globalContext.defineKeyword.apply(globalContext, arguments);
+		},
+		defineError: function (codeName, codeNumber, defaultMessage) {
+			if (typeof codeName !== 'string' || !/^[A-Z]+(_[A-Z]+)*$/.test(codeName)) {
+				throw new Error('Code name must be a string in UPPER_CASE_WITH_UNDERSCORES');
+			}
+			if (typeof codeNumber !== 'number' || codeNumber%1 !== 0 || codeNumber < 10000) {
+				throw new Error('Code number must be an integer > 10000');
+			}
+			if (typeof ErrorCodes[codeName] !== 'undefined') {
+				throw new Error('Error already defined: ' + codeName + ' as ' + ErrorCodes[codeName]);
+			}
+			if (typeof ErrorCodeLookup[codeNumber] !== 'undefined') {
+				throw new Error('Error code already used: ' + ErrorCodeLookup[codeNumber] + ' as ' + codeNumber);
+			}
+			ErrorCodes[codeName] = codeNumber;
+			ErrorCodeLookup[codeNumber] = codeName;
+			ErrorMessagesDefault[codeName] = ErrorMessagesDefault[codeNumber] = defaultMessage;
+			for (var langCode in languages) {
+				var language = languages[langCode];
+				if (language[codeName]) {
+					language[codeNumber] = language[codeNumber] || language[codeName];
+				}
+			}
+		},
+		reset: function () {
+			globalContext.reset();
+			this.error = null;
+			this.missing = [];
+			this.valid = true;
+		},
+		missing: [],
+		error: null,
+		valid: true,
+		normSchema: normSchema,
+		resolveUrl: resolveUrl,
+		getDocumentUri: getDocumentUri,
+		errorCodes: ErrorCodes
+	};
+	return api;
+}
+
+var tv4 = createApi();
+tv4.addLanguage('en-gb', ErrorMessagesDefault);
+
+//legacy property
+tv4.tv4 = tv4;
+
+return tv4; // used by _header.js to globalise.
+
+}));
+},{}],4:[function(require,module,exports){
 'use strict';
 
 /**
-* Depends on:
-* - lodash [bower_components/lodash/lodash.js]
-* - pretender [bower_components/pretender/pretender.js]
-* - route-recognizer [bower_components/route-recognizer/dist/route-recognizer.js]
-*/
+  * Stubby JSON Schema Validator
+  * Depends on tv4, lodash, and RouteRecognizer
+  */
 
-var stubby = (function(deps) {
+var StubbySchemaValidatorModule = function(deps) {
+  return function() {
 
-  var Pretender = deps.pretender;
-  var _ = deps.lodash;
-  var queryString = deps.querystring;
+    var _ = deps.lodash;
+    this.validator = deps.tv4.freshApi();
+    this.schemaCount = 0;
+    this.hyperschemaUrls = {};
+    this.router = new deps.routerecognizer();
 
-  var Stubby = function() {
-    this.stubs = {};
-    this.pretender = new Pretender();
-
-    this.events = {
-      handlers: {},
-      whitelist: ['setup', 'routesetup', 'request']
-    };
-  };
-
-  Stubby.prototype.addModule = function(module) {
-    if (!('register' in module)) {
-      throw new Error('Valid modules need to have a .register method.');
-    }
-    module.register(this);
-  };
-
-  Stubby.prototype.emit = function(name) {
-    if (!this.events.handlers[name]) { return; }
-    var args = [].slice.call(arguments, 1);
-    this.events.handlers[name].forEach(function(hook) {
-      hook.apply(null, args);
-    });
-  };
-
-  Stubby.prototype.on = function(name, handler, thisArg) {
-    if (this.events.whitelist && !_.contains(this.events.whitelist, name)) {
-      throw new Error('"' + name + '" is not a valid event handler');
-    }
-    this.events.handlers[name] = this.events.handlers[name] || [];
-    if (thisArg) { handler = _.bind(handler, thisArg); }
-    this.events.handlers[name].push(handler);
-  };
-
-  Stubby.prototype.passthrough = function(url) {
-    this.pretender.get(url, Pretender.prototype.passthrough);
-  };
-
-  Stubby.prototype.findStubForRequest = function(req) {
-    var stubs = this.stubs[req.url.split('?')[0]];
-    var data = req.requestBody;
-    var contentType = 'requestHeaders' in req && req.requestHeaders['Content-Type'] || '';
-    if (contentType.match('application/json')) {
-      data = JSON.parse(req.requestBody) || {};
-    }
-
-    if (!data) { data = {}; }
-
-    return stubs.filter(function(stub) {
-      return this.stubMatchesRequest(stub, {
-        data: data,
-        method: req.method,
-        headers: req.headers,
-        queryParams: req.queryParams
-      });
-    }, this)[0];
-  };
-
-  Stubby.prototype.stubMatchesRequest = function(stub, request) {
-    var queryParams = request.queryParams;
-    var method = request.method;
-    var data = request.data;
-
-    this.emit('setup', stub, request);
-
-    function isRegex(regex) {
-      return regex && regex.match(/^\/(.+)\/([gimy])?$/);
-    }
-
-    function testRegex(regex, test) {
-      var match = isRegex(regex);
-      return match && new RegExp(match[1], match[2]).test(test);
-    }
-
-    var methodsMatch = stub.request.method === method;
-
-    var paramKeys = _.uniq(_.keys(stub.queryParams).concat(_.keys(queryParams)));
-    var queryParamsMatch = paramKeys.every(function(key) {
-      if (!(key in queryParams) || !(key in stub.queryParams)) { return false; }
-
-      if (isRegex(stub.queryParams[key])) {
-        return testRegex(stub.queryParams[key], queryParams[key]);
-      } else {
-        return stub.queryParams[key] === queryParams[key];
-      }
-    });
-
-    var dataRequestMatch = _.isEqual(stub.request.data, data);
-
-    var headersMatch = _.every(_.pairs(request.headers), function(matchHeader) {
-      var headerTest = matchHeader[1];
-      var headerToTest = request.requestHeaders[matchHeader[0]];
-
-      if (!headerToTest) {
-        return false;
-      }
-      if (isRegex(matchHeader[1]) && testRegex(headerTest, headerToTest)) {
-        return true;
-      }
-      if (headerToTest === headerTest) {
-        return true;
-      }
-      return false;
-    });
-
-    // Request data doesn't need to match if we're validating.
-    if (stub.internal.skipDataMatch) { dataRequestMatch = true; }
-
-    return methodsMatch && queryParamsMatch && dataRequestMatch && headersMatch;
-  };
-
-  Stubby.StubInternal = function(stubby, options) {
-    var urlsplit = options.url.split('?');
-    this.url = urlsplit[0];
-    this.internal = {options: options.options || {}};
-    this.queryParams = options.params || queryString.parse(urlsplit[1]);
-
-    // convert all queryParam values to string
-    // this means we don't support nested query params
-    // we do this because later we compare to the query params in the body
-    // where everything is kept as a string
-    Object.keys(this.queryParams).forEach(function(p) {
-      if (this.queryParams[p] == null) { this.queryParams[p] = ''; }
-      this.queryParams[p] = this.queryParams[p].toString();
-    }, this);
-
-    this.requestCount = 0;
-
-    this.setupRequest = function(requestOptions) {
-      this.request = {
-        headers: requestOptions.headers || {},
-        data: requestOptions.data || {},
-        method: requestOptions.method || 'GET'
-      };
+    this.addSchema = function(uri, schema) {
+      this.validator.addSchema(uri, schema);
+      this.processNewHyperschema(schema);
+      this.schemaCount += 1;
     };
 
-    this.setupRequest(options);
-
-    this.stubMatcher = function(stubbyInstance) {
-      var self = this;
-      return function(stubToMatch) {
-        return stubbyInstance.stubMatchesRequest(self, {
-          data: stubToMatch.request.data,
-          queryParams: stubToMatch.queryParams,
-          headers: stubToMatch.request.headers,
-          method: stubToMatch.request.method
-        });
-      };
+    this.register = function(handler) {
+      handler.on('setup', this.onRequestPrepare, this);
+      handler.on('request', this.onRequestExecute, this);
+      handler.on('routesetup', this.onRequestExecute, this);
     };
 
-    this.respondWith = function(status, data, responseOptions) {
-      if (typeof status !== 'number') {
-        throw new Error('Status (' + JSON.stringify(status) + ') is invalid.');
+    this.onRequestPrepare = function(stub) {
+      stub.internal.skipDataMatch = true;
+    };
+
+    this.onRequestExecute = function(request, stub) {
+      if (stub.internal.options.validateSchema === false) {
+        return null;
       }
-      this.response = {
-        data: data || {},
-        status: status
-      };
+      return this.validate(request, stub);
+    };
 
-      if (responseOptions && responseOptions.headers) {
-        this.response.headers = responseOptions.headers;
-      }
-
-      if (!stubby.stubs[this.url]) { stubby.stubs[this.url] = []; }
-
-      var matchingStub = _.find(stubby.stubs[this.url], this.stubMatcher(stubby));
-      if (matchingStub) {
-        throw new Error('Matching stub found. Cannot override.');
-      }
-
-      stubby.stubs[this.url].push(this);
-
-      stubby.emit('routesetup', {}, this);
-
-      stubby.pretender[this.request.method.toLowerCase()](this.url, function(req) {
-        var matchedStub = stubby.findStubForRequest(req);
-        if (matchedStub) {
-          stubby.emit('request', req, matchedStub);
-          ++matchedStub.requestCount;
-          return stubby.response(matchedStub);
+    this.parseQueryParamsSchema = function(params) {
+      var paramsParsed = {};
+      Object.keys(params).forEach(function(paramName) {
+        var paramMatch = paramName.match(/^(.+)\[(.+)\]$/);
+        var paramValue = params[paramName];
+        if (paramMatch) {
+          var matchPath = paramsParsed[paramMatch[1]];
+          if (!matchPath) {
+            matchPath = {};
+          }
+          matchPath[paramMatch[2]] = paramValue;
         } else {
-          throw new Error('Stubby: no stub found\n (attempting to find: ' + JSON.stringify(req) + ')');
+          paramsParsed[paramName] = paramValue;
         }
       });
+      return paramsParsed;
+    };
 
-      return this;
+    this.processNewHyperschema = function(rawSchema) {
+      var self = this;
+      Object.keys(rawSchema.definitions).forEach(function(descKey) {
+        var val = rawSchema.definitions[descKey];
+        val.links.forEach(function(linkSchema) {
+          var urlToAdd = linkSchema.href;
+
+          if (!self.hyperschemaUrls[urlToAdd]) {
+            self.hyperschemaUrls[urlToAdd] = [];
+          }
+
+          self.hyperschemaUrls[urlToAdd].push(linkSchema);
+          if (urlToAdd.match(/\{(.+)\}/)) {
+            var paramsToMatch = decodeURIComponent(urlToAdd);
+            var doReplaceParam = function(match, param) {
+              linkSchema.baseUrlToAdd = param;
+              return ':id';
+            };
+            urlToAdd = paramsToMatch.replace(/\{\(([^)]+)\)\}/, doReplaceParam);
+          }
+          self.router.add([{path: urlToAdd, handler: linkSchema.href}]);
+        });
+      });
+    };
+
+    this.getSchemaForRoute = function(stub, routeRef) {
+      return _.find(this.hyperschemaUrls[routeRef], function(schema) {
+        console.log('at', schema);
+        if (schema.method === stub.request.method) {
+          return true;
+        }
+      });
+    };
+
+    this.validateRequestSchema = function(stub, request, schema) {
+      var keyTraverse = _.find(Object.keys(request.data), function(key) {
+        return (stub.url.indexOf(key) !== -1);
+      });
+      var requestData = request.data;
+      if (keyTraverse) {
+        requestData = requestData[keyTraverse];
+      }
+
+      var queryParams = this.parseQueryParamsSchema(stub.queryParams);
+      var req = _.extend({}, queryParams, requestData);
+
+      // An empty request is valid. (in the case of gocardless' schema)
+      if (_.isEmpty(req)) { return; }
+
+      var valResponse = this.validator.validateMultiple(req, schema, true, false);
+      if (valResponse.errors.length > 0 || valResponse.missing.length > 0) {
+        var stubInfo = stub.request.method + ' ' + stub.url + ' (' + JSON.stringify(req) + ')';
+        throw new Error('Validation Failed for request: ' + stubInfo + ' ' + JSON.stringify(valResponse));
+      }
+    };
+
+    this.validateEmptyQueryParams = function(stub) {
+      if (!_.isEmpty(stub.request.data) && !_.isEmpty(stub.queryParams)) {
+        throw new Error('Parameters provided to a parameterless route (' +
+                        JSON.stringify([stub.request, stub.queryParams, stub.url]) + ')');
+      }
+    };
+
+    this.validate = function(request, stub) {
+      request.data = {};
+      if (request.requestBody) {
+        request.data = JSON.parse(request.requestBody) || {};
+      }
+
+      var routes = this.router.recognize(stub.url);
+      if (!routes) {
+        throw new Error('URL (' + stub.url + ') is undefined for the API');
+      }
+      var routeSchema = this.getSchemaForRoute(stub, routes[0].handler);
+      if (routeSchema) {
+        this.validateRequestSchema(stub, request, routeSchema.schema);
+      } else {
+        this.validateEmptyQueryParams(stub);
+      }
     };
   };
+};
 
-  Stubby.prototype.stub = function(options) {
-    return new Stubby.StubInternal(this, options);
-  };
-
-  Stubby.prototype.remove = function(options) {
-    var stubToMatch = new Stubby.StubInternal(this, options);
-    var stubsArray = this.stubs[stubToMatch.url];
-    if (!stubsArray) {
-      throw new Error('No stubs exist for this base url');
-    }
-    var stubsArrayOriginalLength = stubsArray.length;
-    _.remove(stubsArray, stubToMatch.stubMatcher(this));
-    if (stubsArrayOriginalLength === stubsArray.length) {
-      throw new Error('Couldn\'t find the specified stub to remove');
-    }
-  };
-
-  Stubby.prototype.verifyNoOutstandingRequest = function() {
-    var outstandingStubs = _.chain(this.stubs)
-      .values()
-      .flatten()
-      .filter(function(stub) { return stub.requestCount === 0; })
-      .map(function(stub) {
-        return stub.request.method + ' ' + stub.url + '/' +
-          queryString.stringify(stub.queryParams);
-      })
-      .value();
-
-    if (outstandingStubs.length !== 0) {
-      throw new Error('Stub(s) were not called: ' + outstandingStubs.join(', '));
-    }
-  };
-
-  Stubby.prototype.response = function(stub) {
-    var headers = stub.request.headers;
-
-    if (!('Content-Type' in headers)) { headers['Content-Type'] = 'application/json'; }
-
-    return [stub.response.status, headers, JSON.stringify(stub.response.data)];
-  };
-
-  Stubby.prototype.passthrough = function(url) {
-    this.pretender.get(url, Pretender.prototype.passthrough);
-  };
-
-
-  return {Stubby: Stubby};
-});
 
 if (typeof module === 'undefined') {
   var deps = {
     'lodash': window._,
-    'pretender': window.Pretender,
-    'querystring': window.queryString
+    'routerecognizer': window.RouteRecognizer,
+    'tv4': window.tv4
   };
   Object.keys(deps).forEach(function(dep) {
     if (typeof deps[dep] === 'undefined') {
-      throw new Error(['[stubby] Missing ', dep, ' library.'].join(' '));
+      throw new Error(['[stubby schema-validator] Missing ', dep, ' library.'].join(' '));
     }
   });
-  window.stubby = stubby(deps);
+  window.schemaValidator = StubbySchemaValidatorModule(deps);
 } else {
-  module.exports = stubby;
+  module.exports = StubbySchemaValidatorModule({
+    lodash: require('lodash'),
+    routerecognizer: require('route-recognizer'),
+    tv4: require('tv4')
+  });
 }
 
 
-},{}],7:[function(require,module,exports){
-'use strict';
 
-var Stubby = require('./stubby')({
-	lodash: require('lodash'),
-	pretender: require('pretender'),
-	querystring: require('query-string'), 
-});
 
-module.exports = Stubby;
-},{"./stubby":6,"lodash":1,"pretender":4,"query-string":5}]},{},[7])(7)
+},{"lodash":1,"route-recognizer":2,"tv4":3}]},{},[4])(4)
 });

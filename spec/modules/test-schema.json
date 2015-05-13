@@ -1,0 +1,1038 @@
+{
+  "definitions": {
+    "customer": {
+      "$schema": "https://developer.gocardless.com/hyper-schema.json",
+      "title": "Customers",
+      "envelope": "customers",
+      "description": "Customer objects hold the contact details for a customer. A customer can have several [customer bank accounts](https://developer.gocardless.com/pro/#api-endpoints-customer-bank-accounts), which in turn can have several Direct Debit [mandates](https://developer.gocardless.com/pro/#api-endpoints-mandates).",
+      "definitions": {
+        "id": {
+          "description": "Unique identifier, beginning with \"CU\".",
+          "example": "CU123",
+          "type": [
+            "string"
+          ]
+        },
+        "identity": {
+          "$ref": "#/definitions/customer/definitions/id"
+        },
+        "created_at": {
+          "description": "Fixed [timestamp](https://developer.gocardless.com/pro/#overview-time-zones-dates), recording when this resource was created.",
+          "example": "2014-01-01T12:00:00.000Z",
+          "format": "date-time",
+          "type": [
+            "string"
+          ]
+        },
+        "email": {
+          "description": "Customer's email address.",
+          "example": "user@example.com",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "given_name": {
+          "description": "Customer's first name.",
+          "example": "Frank",
+          "type": [
+            "string"
+          ]
+        },
+        "family_name": {
+          "description": "Customer's surname.",
+          "example": "Osborne",
+          "type": [
+            "string"
+          ]
+        },
+        "address_line1": {
+          "description": "The first line of the customer's address.",
+          "example": "1 Example House",
+          "type": [
+            "string"
+          ]
+        },
+        "address_line2": {
+          "description": "The second line of the customer's address.",
+          "example": "17 Example Street",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "address_line3": {
+          "description": "The third line of the customer's address.",
+          "example": null,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "city": {
+          "description": "The city of the customer's address.",
+          "example": "London",
+          "type": [
+            "string"
+          ]
+        },
+        "region": {
+          "description": "The customer's address region, county or department.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "postal_code": {
+          "description": "The customer's postal code.",
+          "type": [
+            "string"
+          ]
+        },
+        "country_code": {
+          "description": "[ISO 3166-1](http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements) alpha-2 code.",
+          "type": [
+            "string"
+          ]
+        },
+        "links": {
+          "description": "",
+          "type": [
+            "object"
+          ],
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "links": [
+        {
+          "title": "Create a customer",
+          "description": "Creates a new customer object.",
+          "href": "/customers",
+          "method": "POST",
+          "rel": "create",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "email": {
+                "$ref": "#/definitions/customer/definitions/email"
+              },
+              "given_name": {
+                "$ref": "#/definitions/customer/definitions/given_name"
+              },
+              "family_name": {
+                "$ref": "#/definitions/customer/definitions/family_name"
+              },
+              "address_line1": {
+                "$ref": "#/definitions/customer/definitions/address_line1"
+              },
+              "address_line2": {
+                "$ref": "#/definitions/customer/definitions/address_line2"
+              },
+              "address_line3": {
+                "$ref": "#/definitions/customer/definitions/address_line3"
+              },
+              "city": {
+                "$ref": "#/definitions/customer/definitions/city"
+              },
+              "region": {
+                "$ref": "#/definitions/customer/definitions/region"
+              },
+              "postal_code": {
+                "$ref": "#/definitions/customer/definitions/postal_code"
+              },
+              "country_code": {
+                "$ref": "#/definitions/customer/definitions/country_code"
+              },
+              "metadata": {
+                "$ref": "#/definitions/helper/definitions/metadata"
+              },
+              "links": {
+                "$ref": "#/definitions/customer/definitions/links"
+              }
+            },
+            "required": [
+              "country_code",
+              "city",
+              "postal_code",
+              "given_name",
+              "family_name",
+              "address_line1"
+            ],
+            "additionalProperties": false
+          },
+          "example": "POST https://api.gocardless.com/customers HTTP/1.1\n{\n  \"customers\": {\n    \"email\": \"user@example.com\",\n    \"given_name\": \"Frank\",\n    \"family_name\": \"Osborne\",\n    \"address_line1\": \"27 Acer Road\",\n    \"address_line2\": \"Apt 2\",\n    \"city\": \"London\",\n    \"postal_code\": \"E8 3GX\",\n    \"country_code\": \"GB\",\n    \"metadata\": {\n      \"salesforce_id\": \"ABCD1234\"\n    }\n  }\n}\n\nHTTP/1.1 201 (Created)\nLocation: /customers/CU123\n{\n  \"customers\": {\n    \"id\": \"CU123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"email\": \"user@example.com\",\n    \"given_name\": \"Frank\",\n    \"family_name\": \"Osborne\",\n    \"address_line1\": \"27 Acer Road\",\n    \"address_line2\": \"Apt 2\",\n    \"address_line3\": null,\n    \"city\": \"London\",\n    \"region\": null,\n    \"postal_code\": \"E8 3GX\",\n    \"country_code\": \"GB\",\n    \"metadata\": {\n      \"salesforce_id\": \"ABCD1234\"\n    }\n  }\n}\n"
+        },
+        {
+          "title": "List customers",
+          "description": "Returns a [cursor-paginated](https://developer.gocardless.com/pro/#overview-cursor-pagination) list of your customers.",
+          "href": "/customers",
+          "method": "GET",
+          "rel": "instances",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "before": {
+                "$ref": "#/definitions/helper/definitions/instances_before"
+              },
+              "after": {
+                "$ref": "#/definitions/helper/definitions/instances_after"
+              },
+              "limit": {
+                "$ref": "#/definitions/helper/definitions/instances_limit"
+              },
+              "created_at": {
+                "$ref": "#/definitions/helper/definitions/instances_created_at"
+              }
+            },
+            "additionalProperties": false
+          },
+          "example": "GET https://api.gocardless.com/customers?after=CU123 HTTP/1.1\n\nHTTP/1.1 200 (OK)\n{\n  \"meta\": {\n    \"cursors\": {\n      \"before\": \"CU000\",\n      \"after\": \"CU456\",\n    },\n    \"limit\": 50\n  },\n  \"customers\": [{\n    \"id\": \"CU123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"email\": \"user@example.com\",\n    \"given_name\": \"Frank\",\n    \"family_name\": \"Osborne\",\n    \"address_line1\": \"27 Acer Road\",\n    \"address_line2\": \"Apt 2\",\n    \"address_line3\": null,\n    \"city\": \"London\",\n    \"region\": null,\n    \"postal_code\": \"E8 3GX\",\n    \"country_code\": \"GB\",\n    \"metadata\": {\n      \"salesforce_id\": \"ABCD1234\"\n    }\n  }, {\n  ...\n  }]\n}\n"
+        },
+        {
+          "title": "Get a single customer",
+          "description": "Retrieves the details of an existing customer.",
+          "href": "/customers/{(%23%2Fdefinitions%2Fcustomer%2Fdefinitions%2Fidentity)}",
+          "method": "GET",
+          "rel": "self",
+          "example": "GET https://api.gocardless.com/customers/CU123 HTTP/1.1\n\nHTTP/1.1 200 (OK)\n{\n  \"customers\": {\n    \"id\": \"CU123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"email\": \"user@example.com\",\n    \"given_name\": \"Frank\",\n    \"family_name\": \"Osborne\",\n    \"address_line1\": \"27 Acer Road\",\n    \"address_line2\": \"Apt 2\",\n    \"address_line3\": null,\n    \"city\": \"London\",\n    \"region\": null,\n    \"postal_code\": \"E8 3GX\",\n    \"country_code\": \"GB\",\n    \"metadata\": {\n      \"salesforce_id\": \"ABCD1234\"\n    }\n  }\n}\n"
+        },
+        {
+          "title": "Update a customer",
+          "description": "Updates a customer object. Supports all of the fields supported when creating a customer.",
+          "href": "/customers/{(%23%2Fdefinitions%2Fcustomer%2Fdefinitions%2Fidentity)}",
+          "method": "PUT",
+          "rel": "update",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "email": {
+                "$ref": "#/definitions/customer/definitions/email"
+              },
+              "given_name": {
+                "$ref": "#/definitions/customer/definitions/given_name"
+              },
+              "family_name": {
+                "$ref": "#/definitions/customer/definitions/family_name"
+              },
+              "address_line1": {
+                "$ref": "#/definitions/customer/definitions/address_line1"
+              },
+              "address_line2": {
+                "$ref": "#/definitions/customer/definitions/address_line2"
+              },
+              "address_line3": {
+                "$ref": "#/definitions/customer/definitions/address_line3"
+              },
+              "city": {
+                "$ref": "#/definitions/customer/definitions/city"
+              },
+              "region": {
+                "$ref": "#/definitions/customer/definitions/region"
+              },
+              "postal_code": {
+                "$ref": "#/definitions/customer/definitions/postal_code"
+              },
+              "country_code": {
+                "$ref": "#/definitions/customer/definitions/country_code"
+              },
+              "metadata": {
+                "$ref": "#/definitions/helper/definitions/metadata"
+              },
+              "links": {
+                "$ref": "#/definitions/customer/definitions/links"
+              }
+            },
+            "additionalProperties": false
+          },
+          "example": "PUT https://api.gocardless.com/customers/CU123 HTTP/1.1\n{\n  \"customers\": {\n    \"email\": \"updated_user@example.com\",\n    \"given_name\": \"Frank\",\n    \"family_name\": \"Osborne\",\n    \"address_line1\": \"29 Acer Road\",\n    \"address_line2\": \"Apt 3\",\n    \"address_line3\": \"Block 4\",\n    \"city\": \"London\",\n    \"metadata\": {\n      \"salesforce_id\": \"EFGH5678\"\n    }\n  }\n}\n\nHTTP/1.1 200 (OK)\n{\n  \"customers\": {\n    \"id\": \"CU123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"email\": \"updated_user@example.com\",\n    \"given_name\": \"Frank\",\n    \"family_name\": \"Osborne\",\n    \"address_line1\": \"29 Acer Road\",\n    \"address_line2\": \"Apt 3\",\n    \"address_line3\": \"Block 4\",\n    \"city\": \"London\",\n    \"region\": null,\n    \"postal_code\": \"E8 3GX\",\n    \"country_code\": \"GB\",\n    \"metadata\": {\n      \"salesforce_id\": \"EFGH5678\"\n    }\n  }\n}\n"
+        }
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/customer/definitions/id"
+        },
+        "created_at": {
+          "$ref": "#/definitions/customer/definitions/created_at"
+        },
+        "email": {
+          "$ref": "#/definitions/customer/definitions/email"
+        },
+        "given_name": {
+          "$ref": "#/definitions/customer/definitions/given_name"
+        },
+        "family_name": {
+          "$ref": "#/definitions/customer/definitions/family_name"
+        },
+        "address_line1": {
+          "$ref": "#/definitions/customer/definitions/address_line1"
+        },
+        "address_line2": {
+          "$ref": "#/definitions/customer/definitions/address_line2"
+        },
+        "address_line3": {
+          "$ref": "#/definitions/customer/definitions/address_line3"
+        },
+        "city": {
+          "$ref": "#/definitions/customer/definitions/city"
+        },
+        "region": {
+          "$ref": "#/definitions/customer/definitions/region"
+        },
+        "postal_code": {
+          "$ref": "#/definitions/customer/definitions/postal_code"
+        },
+        "country_code": {
+          "$ref": "#/definitions/customer/definitions/country_code"
+        },
+        "metadata": {
+          "$ref": "#/definitions/helper/definitions/metadata"
+        },
+        "links": {
+          "$ref": "#/definitions/customer/definitions/links"
+        }
+      },
+      "type": [
+        "object"
+      ]
+    },
+    "payment": {
+      "$schema": "https://developer.gocardless.com/hyper-schema.json",
+      "title": "Payments",
+      "envelope": "payments",
+      "description": "Payment objects represent payments from a [customer](https://developer.gocardless.com/pro/#api-endpoints-customers) to a [creditor](https://developer.gocardless.com/pro/#api-endpoints-creditors), taken against a Direct Debit [mandate](https://developer.gocardless.com/pro/#api-endpoints-mandates).\n\nGoCardless will notify you via a [webhook](https://developer.gocardless.com/pro/#webhooks) whenever the state of a payment changes.",
+      "definitions": {
+        "id": {
+          "description": "Unique identifier, beginning with \"PM\"",
+          "example": "PM123",
+          "type": [
+            "string"
+          ]
+        },
+        "identity": {
+          "$ref": "#/definitions/payment/definitions/id"
+        },
+        "created_at": {
+          "description": "Fixed [timestamp](https://developer.gocardless.com/pro/#overview-time-zones-dates), recording when this resource was created.",
+          "example": "2014-01-01T12:00:00.000Z",
+          "format": "date-time",
+          "type": [
+            "string"
+          ]
+        },
+        "amount": {
+          "description": "Amount in pence or cents.",
+          "example": "1000",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "currency": {
+          "description": "[ISO 4217](http://en.wikipedia.org/wiki/ISO_4217#Active_codes) currency code, currently only \"GBP\" and \"EUR\" are supported.",
+          "example": "EUR",
+          "type": [
+            "string"
+          ]
+        },
+        "charge_date": {
+          "description": "A future date on which the payment should be collected. If not specified, the payment will be collected as soon as possible. This must be on or after the [mandate](https://developer.gocardless.com/pro/#api-endpoints-mandates)'s `next_possible_charge_date`, and will be rolled-forwards by GoCardless if it is not a working day.",
+          "example": "2014-05-21",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reference": {
+          "description": "An optional payment reference. This will be appended to the mandate reference on your customer's bank statement. For Bacs payments this can be up to 10 characters, for SEPA Core payments the limit is 140 characters.",
+          "example": "WINEBOX001",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "amount_refunded": {
+          "description": "Amount refunded in pence or cents.",
+          "example": "150",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "status": {
+          "description": "One of:\n<ul>\n<li>`pending_submission`: the payment has been created, but not yet submitted to the banks</li>\n<li>`submitted`: the payment has been submitted to the banks</li>\n<li>`confirmed`: the payment has been confirmed as collected</li>\n<li>`failed`: the payment failed to be processed. Note that payments can fail after being confirmed, if the failure message is sent late by the banks.</li>\n<li>`charged_back`: the payment has been charged back</li>\n<li>`paid_out`:  the payment has been paid out</li>\n<li>`cancelled`: the payment has been cancelled</li>\n</ul>",
+          "example": "submitted",
+          "type": [
+            "string"
+          ]
+        },
+        "description": {
+          "description": "A human readable description of the payment.",
+          "example": "One-off upgrade fee",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "links": {
+          "description": "",
+          "type": [
+            "object"
+          ],
+          "properties": {
+            "mandate": {
+              "type": [
+                "string"
+              ],
+              "description": "ID of the [mandate](https://developer.gocardless.com/pro/#api-endpoints-mandates) against which this payment should be collected.",
+              "example": "MD123"
+            },
+            "creditor": {
+              "type": [
+                "string"
+              ],
+              "description": "ID of [creditor](https://developer.gocardless.com/pro/#api-endpoints-creditors) to which the collected payment will be sent.",
+              "example": "CR123"
+            },
+            "payout": {
+              "type": [
+                "string"
+              ],
+              "description": "ID of [payout](https://developer.gocardless.com/pro/#api-endpoints-payouts) which contains the funds from this payment.<br/>**Note**: this property will not be present until the payment has been successfully collected.",
+              "example": "PO123"
+            },
+            "subscription": {
+              "type": [
+                "string"
+              ],
+              "description": "ID of [subscription](https://developer.gocardless.com/pro/#api-endpoints-subscriptions) from which this payment was created.<br/>**Note**: this property will only be present if this payment is part of a subscription.",
+              "example": "SU123"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "links": [
+        {
+          "description": "<a name=\"mandate_is_inactive\"></a>Creates a new payment object.\n\nThis fails with a `mandate_is_inactive` error if the linked [mandate](https://developer.gocardless.com/pro/#api-endpoints-mandates) is cancelled. Payments can be created against `pending_submission` mandates, but they will not be submitted until the mandate becomes active.",
+          "title": "Create a payment",
+          "href": "/payments",
+          "method": "POST",
+          "rel": "create",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "amount": {
+                "$ref": "#/definitions/payment/definitions/amount"
+              },
+              "currency": {
+                "$ref": "#/definitions/payment/definitions/currency"
+              },
+              "description": {
+                "$ref": "#/definitions/payment/definitions/description"
+              },
+              "charge_date": {
+                "$ref": "#/definitions/payment/definitions/charge_date"
+              },
+              "reference": {
+                "$ref": "#/definitions/payment/definitions/reference"
+              },
+              "metadata": {
+                "$ref": "#/definitions/helper/definitions/metadata"
+              },
+              "links": {
+                "description": "",
+                "type": [
+                  "object"
+                ],
+                "properties": {
+                  "mandate": {
+                    "type": [
+                      "string"
+                    ],
+                    "description": "ID of the [mandate](https://developer.gocardless.com/pro/#api-endpoints-mandates) against which this payment should be collected.",
+                    "example": "MD123"
+                  }
+                },
+                "required": [
+                  "mandate"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "amount",
+              "currency",
+              "links"
+            ]
+          },
+          "notes": {
+            "warning": "by default, you have the option to provide a payment reference up to 10 characters in length. However, if you are providing custom mandate references (which can only be enabled by contacting support), the combined length of the two references separated by a dash character must not exceed 18 characters."
+          },
+          "example": "POST https://api.gocardless.com/payments HTTP/1.1\n{\n  \"payments\": {\n    \"amount\": 100,\n    \"currency\": \"GBP\",\n    \"charge_date\": \"2014-05-19\",\n    \"reference\": \"WINEBOX001\",\n    \"metadata\": {\n      \"order_dispatch_date\": \"2014-05-22\"\n    },\n    \"links\": {\n      \"mandate\": \"MD123\"\n    }\n  }\n}\n\nHTTP/1.1 201 (Created)\nLocation: /payments/PM123\n{\n  \"payments\": {\n    \"id\": \"PM123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"charge_date\": \"2014-05-21\",\n    \"amount\": 100,\n    \"description\": null,\n    \"currency\": \"GBP\",\n    \"status\": \"pending_submission\",\n    \"reference\": \"WINEBOX001\",\n    \"metadata\": {\n      \"order_dispatch_date\": \"2014-05-22\"\n    },\n    \"amount_refunded\": 0,\n    \"links\": {\n      \"mandate\": \"MD123\",\n      \"creditor\": \"CR123\"\n    }\n  }\n}\n"
+        },
+        {
+          "title": "List payments",
+          "description": "Returns a [cursor-paginated](https://developer.gocardless.com/pro/#overview-cursor-pagination) list of your payments.",
+          "href": "/payments",
+          "method": "GET",
+          "rel": "instances",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "before": {
+                "$ref": "#/definitions/helper/definitions/instances_before"
+              },
+              "after": {
+                "$ref": "#/definitions/helper/definitions/instances_after"
+              },
+              "limit": {
+                "$ref": "#/definitions/helper/definitions/instances_limit"
+              },
+              "created_at": {
+                "$ref": "#/definitions/helper/definitions/instances_created_at"
+              },
+              "customer": {
+                "$ref": "#/definitions/customer/definitions/identity"
+              },
+              "creditor": {
+                "$ref": "#/definitions/creditor/definitions/identity"
+              },
+              "subscription": {
+                "$ref": "#/definitions/subscription/definitions/identity"
+              },
+              "mandate": {
+                "$ref": "#/definitions/mandate/definitions/identity"
+              },
+              "status": {
+                "$ref": "#/definitions/payment/definitions/status"
+              }
+            },
+            "additionalProperties": false
+          },
+          "example": "GET https://api.gocardless.com/payments HTTP/1.1\n\nHTTP/1.1 200 (OK)\n{\n  \"meta\": {\n    \"cursors\": {\n      \"before\": null,\n      \"after\": null\n    },\n    \"limit\": 50\n  },\n  \"payments\": [{\n    \"id\": \"PM123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"charge_date\": \"2014-05-15\",\n    \"amount\": 100,\n    \"description\": null,\n    \"currency\": \"GBP\",\n    \"status\": \"pending_submission\",\n    \"reference\": \"WINEBOX001\",\n    \"metadata\": {\n      \"order_dispatch_date\": \"2014-05-22\"\n    },\n    \"amount_refunded\": 0,\n    \"links\": {\n      \"mandate\": \"MD123\",\n      \"creditor\": \"CR123\"\n    }\n  }]\n}\n"
+        },
+        {
+          "title": "Get a single payment",
+          "description": "Retrieves the details of a single existing payment.",
+          "href": "/payments/{(%23%2Fdefinitions%2Fpayment%2Fdefinitions%2Fidentity)}",
+          "method": "GET",
+          "rel": "self",
+          "example": "GET https://api.gocardless.com/payments/PM123 HTTP/1.1\n\nHTTP/1.1 200 (OK)\n{\n  \"payments\": {\n    \"id\": \"PM123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"charge_date\": \"2014-05-15\",\n    \"amount\": 100,\n    \"description\": null,\n    \"currency\": \"GBP\",\n    \"status\": \"pending_submission\",\n    \"reference\": \"WINEBOX001\",\n    \"metadata\": {\n      \"order_dispatch_date\": \"2014-05-22\"\n    },\n    \"amount_refunded\": 0,\n    \"links\": {\n      \"mandate\": \"MD123\",\n      \"creditor\": \"CR123\"\n    }\n  }\n}\n"
+        },
+        {
+          "title": "Update a payment",
+          "description": "Updates a payment object. This accepts only the metadata parameter.",
+          "href": "/payments/{(%23%2Fdefinitions%2Fpayment%2Fdefinitions%2Fidentity)}",
+          "method": "PUT",
+          "rel": "update",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "metadata": {
+                "$ref": "#/definitions/helper/definitions/metadata"
+              }
+            },
+            "additionalProperties": false
+          },
+          "example": "PUT https://api.gocardless.com/payments/PM123 HTTP/1.1\n{\n  \"payments\": {\n    \"metadata\": {\n      \"key\": \"value\"\n    }\n  }\n}\n\nHTTP/1.1 200 (OK)\n{\n  \"payments\": {\n    \"id\": \"PM123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"charge_date\": \"2014-05-15\",\n    \"amount\": 100,\n    \"description\": null,\n    \"currency\": \"GBP\",\n    \"status\": \"pending_submission\",\n    \"reference\": \"WINEBOX001\",\n    \"metadata\": {\n      \"key\": \"value\"\n    },\n    \"amount_refunded\": 0,\n    \"links\": {\n      \"mandate\": \"MD123\",\n      \"creditor\": \"CR123\"\n    }\n  }\n}\n"
+        },
+        {
+          "title": "Cancel a payment",
+          "description": "Cancels the payment if it has not already been submitted to the banks. Any metadata supplied to this endpoint will be stored on the payment cancellation event it causes.\n\nThis will fail with a `cancellation_failed` error unless the payment's status is `pending_submission`.",
+          "href": "/payments/{(%23%2Fdefinitions%2Fpayment%2Fdefinitions%2Fidentity)}/actions/cancel",
+          "method": "POST",
+          "rel": "cancel",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "metadata": {
+                "$ref": "#/definitions/helper/definitions/metadata"
+              }
+            },
+            "additionalProperties": false
+          },
+          "example": "POST https://api.gocardless.com/payments/PM123/actions/cancel HTTP/1.1\n{\n  \"data\": {\n    \"metadata\": {\n      \"ticket_id\": \"TK123\"\n    }\n  }\n}\n\nHTTP/1.1 200 (OK)\n{\n  \"payments\": {\n    \"id\": \"PM123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"charge_date\": \"2014-05-21\",\n    \"amount\": 100,\n    \"description\": null,\n    \"currency\": \"GBP\",\n    \"status\": \"cancelled\",\n    \"reference\": \"WINEBOX001\",\n    \"metadata\": {\n      \"order_dispatch_date\": \"2014-05-22\"\n    },\n    \"amount_refunded\": 0,\n    \"links\": {\n      \"mandate\": \"MD123\",\n      \"creditor\": \"CR123\"\n    }\n  }\n}\n"
+        },
+        {
+          "title": "Retry a payment",
+          "description": "<a name=\"retry_failed\"></a>Retries a failed payment if the underlying mandate is active. You will receive a `resubmission_requested` webhook, but after that retrying the payment follows the same process as its initial creation, so you will receive a `submitted` webhook, followed by a `confirmed` or `failed` event. Any metadata supplied to this endpoint will be stored against the payment submission event it causes.\n\nThis will return a `retry_failed` error if the payment has not failed.",
+          "href": "/payments/{(%23%2Fdefinitions%2Fpayment%2Fdefinitions%2Fidentity)}/actions/retry",
+          "method": "POST",
+          "rel": "retry",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "metadata": {
+                "$ref": "#/definitions/helper/definitions/metadata"
+              }
+            },
+            "additionalProperties": false
+          },
+          "example": "POST https://api.gocardless.com/payments/PM123/actions/retry HTTP/1.1\n\n{\n  \"data\": {\n    \"metadata\": {\n      \"reason\": \"Customer request\"\n    }\n  }\n}\n\nHTTP/1.1 200 (OK)\n{\n  \"payments\": {\n    \"id\": \"PM123\",\n    \"created_at\": \"2014-05-08T17:01:06.000Z\",\n    \"charge_date\": \"2014-05-21\",\n    \"amount\": 100,\n    \"description\": null,\n    \"currency\": \"GBP\",\n    \"status\": \"submitted\",\n    \"reference\": \"WINEBOX001\",\n    \"metadata\": {\n      \"order_dispatch_date\": \"2014-05-22\"\n    },\n    \"amount_refunded\": 0,\n    \"links\": {\n      \"mandate\": \"MD123\",\n      \"creditor\": \"CR123\"\n    }\n  }\n}\n"
+        }
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/payment/definitions/id"
+        },
+        "created_at": {
+          "$ref": "#/definitions/payment/definitions/created_at"
+        },
+        "amount": {
+          "$ref": "#/definitions/payment/definitions/amount"
+        },
+        "amount_refunded": {
+          "$ref": "#/definitions/payment/definitions/amount_refunded"
+        },
+        "currency": {
+          "$ref": "#/definitions/payment/definitions/currency"
+        },
+        "description": {
+          "$ref": "#/definitions/payment/definitions/description"
+        },
+        "charge_date": {
+          "$ref": "#/definitions/payment/definitions/charge_date"
+        },
+        "reference": {
+          "$ref": "#/definitions/payment/definitions/reference"
+        },
+        "metadata": {
+          "$ref": "#/definitions/helper/definitions/metadata"
+        },
+        "status": {
+          "$ref": "#/definitions/payment/definitions/status"
+        },
+        "links": {
+          "$ref": "#/definitions/payment/definitions/links"
+        }
+      },
+      "type": [
+        "object"
+      ]
+    },
+    "helper": {
+      "$schema": "https://developer.gocardless.com/hyper-schema.json",
+      "title": "Helpers",
+      "description": "",
+      "envelope": "data",
+      "definitions": {
+        "metadata": {
+          "description": "Key-value store of custom data. Up to 3 keys are permitted, with key names up to 50 characters and values up to 200 characters.",
+          "type": [
+            "object"
+          ],
+          "maxProperties": 3,
+          "patternProperties": {
+            "^(.){1,50}$": {
+              "type": [
+                "string"
+              ],
+              "maxLength": 200
+            }
+          }
+        },
+        "instances_before": {
+          "type": [
+            "string"
+          ],
+          "description": "Cursor pointing to the end of the desired set."
+        },
+        "instances_after": {
+          "type": [
+            "string"
+          ],
+          "description": "Cursor pointing to the start of the desired set."
+        },
+        "instances_limit": {
+          "type": [
+            "number",
+            "string"
+          ],
+          "description": "Number of records to return."
+        },
+        "instances_created_at": {
+          "description": "",
+          "type": [
+            "object"
+          ],
+          "properties": {
+            "gt": {
+              "type": [
+                "string"
+              ],
+              "format": "date-time",
+              "description": "Limit to records created after the specified date-time."
+            },
+            "lt": {
+              "type": [
+                "string"
+              ],
+              "format": "date-time",
+              "description": "Limit to records created before the specified date-time."
+            },
+            "gte": {
+              "type": [
+                "string"
+              ],
+              "format": "date-time",
+              "description": "Limit to records created on or after the specified date-time."
+            },
+            "lte": {
+              "type": [
+                "string"
+              ],
+              "format": "date-time",
+              "description": "Limit to records created on or before the specified date-time."
+            }
+          }
+        },
+        "list_basic": {
+          "description": "",
+          "type": [
+            "object"
+          ],
+          "properties": {
+            "before": {
+              "$ref": "#/definitions/helper/definitions/instances_before"
+            },
+            "after": {
+              "$ref": "#/definitions/helper/definitions/instances_after"
+            },
+            "limit": {
+              "$ref": "#/definitions/helper/definitions/instances_limit"
+            }
+          },
+          "additionalProperties": false
+        },
+        "list_extended": {
+          "description": "",
+          "type": [
+            "object"
+          ],
+          "properties": {
+            "before": {
+              "$ref": "#/definitions/helper/definitions/instances_before"
+            },
+            "after": {
+              "$ref": "#/definitions/helper/definitions/instances_after"
+            },
+            "limit": {
+              "$ref": "#/definitions/helper/definitions/instances_limit"
+            },
+            "created_at": {
+              "$ref": "#/definitions/helper/definitions/instances_created_at"
+            }
+          },
+          "additionalProperties": false
+        },
+        "scheme": {
+          "description": "Direct Debit scheme",
+          "type": [
+            "string"
+          ]
+        },
+        "mandate_account_number": {
+          "description": "8 digit, valid UK bank account number.",
+          "example": "55779912",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mandate_sort_code": {
+          "description": "6 digit, valid UK sort code.",
+          "example": "200000",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mandate_bank_code": {
+          "description": "Bank identifier code.",
+          "example": "20041",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mandate_branch_code": {
+          "description": "Branch identifier code.",
+          "example": "01005",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "iban": {
+          "description": "International Bank Account Number",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bic": {
+          "description": "Bank Identifier Code",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "account_holder_address": {
+          "description": "The address of the account holder.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "account_number": {
+          "description": "8 digit, valid UK bank account number.",
+          "example": "55779912",
+          "type": [
+            "string"
+          ]
+        },
+        "sort_code": {
+          "description": "6 digit, valid UK sort code.",
+          "example": "200000",
+          "type": [
+            "string"
+          ]
+        },
+        "bank_code": {
+          "description": "Bank identifier code.",
+          "example": "20041",
+          "type": [
+            "string"
+          ]
+        },
+        "branch_code": {
+          "description": "Branch identifier code.",
+          "example": "01005",
+          "type": [
+            "string"
+          ]
+        },
+        "country_code": {
+          "description": "[ISO 3166-1](http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements) alpha-2 code. Defaults to the country code of the `iban` if supplied, otherwise is required.",
+          "type": [
+            "string"
+          ]
+        },
+        "account_holder_name": {
+          "description": "Name of the account holder, as known by the bank. Usually this matches the name of the linked [customer](https://developer.gocardless.com/pro/#api-endpoints-customers). This field cannot exceed 18 characters.",
+          "example": "Lando Calrissian",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "mandate_reference": {
+          "description": "Mandate reference (normally set by GoCardless)",
+          "example": "Foo Subscription",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "signed_at": {
+          "description": "Will render a form with this date and no signature field.",
+          "example": "2014-01-18",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "links": {
+          "description": "",
+          "type": [
+            "object"
+          ],
+          "sun": {
+            "type": [
+              "string"
+            ],
+            "description": "If you have multiple SUNs for the a scheme you can specify which will be displayed on the mandate by specifying an ID of one here."
+          }
+        }
+      },
+      "links": [
+        {
+          "title": "Mandate PDF",
+          "description": "Returns a PDF mandate form with a signature field, ready to be signed by your customer. May be fully or partially pre-filled.\n\nYou must specify `Accept: application/pdf` on requests to this endpoint.\n\nBank account details may either be supplied using the IBAN (international bank account number), or [local details](https://developer.gocardless.com/pro/#ui-compliance-local-bank-details). For more information on the different fields required in each country, please see the [local bank details](https://developer.gocardless.com/pro/#ui-compliance-local-bank-details) section.\n\nTo generate a mandate in a foreign language, set your `Accept-Language` header to the relevant [ISO 639-1](http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes#Partial_ISO_639_table) language code. Currently Dutch, English, French, German, Italian, Portuguese and Spanish are supported.\n\n_Note:_ If you want to render a PDF of an existing mandate you can also do so using the [mandate show endpoint](https://developer.gocardless.com/pro/#mandates-get-a-single-mandate).",
+          "href": "/helpers/mandate",
+          "method": "POST",
+          "rel": "mandate",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "scheme": {
+                "$ref": "#/definitions/helper/definitions/scheme"
+              },
+              "country_code": {
+                "$ref": "#/definitions/helper/definitions/country_code"
+              },
+              "account_number": {
+                "$ref": "#/definitions/helper/definitions/mandate_account_number"
+              },
+              "bank_code": {
+                "$ref": "#/definitions/helper/definitions/mandate_bank_code"
+              },
+              "branch_code": {
+                "$ref": "#/definitions/helper/definitions/mandate_branch_code"
+              },
+              "sort_code": {
+                "$ref": "#/definitions/helper/definitions/mandate_sort_code"
+              },
+              "account_holder_name": {
+                "$ref": "#/definitions/helper/definitions/account_holder_name"
+              },
+              "account_holder_address": {
+                "$ref": "#/definitions/helper/definitions/account_holder_address"
+              },
+              "mandate_reference": {
+                "$ref": "#/definitions/helper/definitions/mandate_reference"
+              },
+              "signed_at": {
+                "$ref": "#/definitions/helper/definitions/signed_at"
+              },
+              "iban": {
+                "$ref": "#/definitions/helper/definitions/iban"
+              },
+              "bic": {
+                "$ref": "#/definitions/helper/definitions/bic"
+              },
+              "links": {
+                "$ref": "#/definitions/helper/definitions/links"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        {
+          "title": "Modulus checking",
+          "description": "Check whether an account number and bank / branch code combination are compatible.\n\nBank account details may either be supplied using the IBAN (international bank account number), or [local details](https://developer.gocardless.com/pro/#ui-compliance-local-bank-details). For more information on the different fields required in each country, please see the [local bank details](https://developer.gocardless.com/pro/#ui-compliance-local-bank-details) section.",
+          "href": "/helpers/modulus_check",
+          "method": "POST",
+          "rel": "modulus_check",
+          "schema": {
+            "type": [
+              "object"
+            ],
+            "properties": {
+              "iban": {
+                "$ref": "#/definitions/helper/definitions/iban"
+              },
+              "account_number": {
+                "$ref": "#/definitions/helper/definitions/account_number"
+              },
+              "bank_code": {
+                "$ref": "#/definitions/helper/definitions/bank_code"
+              },
+              "branch_code": {
+                "$ref": "#/definitions/helper/definitions/branch_code"
+              },
+              "sort_code": {
+                "$ref": "#/definitions/helper/definitions/sort_code"
+              },
+              "country_code": {
+                "$ref": "#/definitions/helper/definitions/country_code"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      ],
+      "properties": {},
+      "type": [
+        "object"
+      ]
+    }
+  },
+  "$schema": "https://developer.gocardless.com/hyper-schema.json",
+  "properties": {
+    "api_key": {
+      "$ref": "#/definitions/api_key"
+    },
+    "creditor": {
+      "$ref": "#/definitions/creditor"
+    },
+    "creditor_bank_account": {
+      "$ref": "#/definitions/creditor_bank_account"
+    },
+    "customer": {
+      "$ref": "#/definitions/customer"
+    },
+    "customer_bank_account": {
+      "$ref": "#/definitions/customer_bank_account"
+    },
+    "event": {
+      "$ref": "#/definitions/event"
+    },
+    "helper": {
+      "$ref": "#/definitions/helper"
+    },
+    "mandate": {
+      "$ref": "#/definitions/mandate"
+    },
+    "payment": {
+      "$ref": "#/definitions/payment"
+    },
+    "payout": {
+      "$ref": "#/definitions/payout"
+    },
+    "publishable_api_key": {
+      "$ref": "#/definitions/publishable_api_key"
+    },
+    "redirect_flow": {
+      "$ref": "#/definitions/redirect_flow"
+    },
+    "refund": {
+      "$ref": "#/definitions/refund"
+    },
+    "role": {
+      "$ref": "#/definitions/role"
+    },
+    "subscription": {
+      "$ref": "#/definitions/subscription"
+    },
+    "user": {
+      "$ref": "#/definitions/user"
+    }
+  },
+  "type": [
+    "object"
+  ],
+  "description": "GoCardless Enterprise API",
+  "id": "gocardless-enterprise",
+  "links": [
+    {
+      "href": "https://api.gocardless.com",
+      "rel": "self"
+    },
+    {
+      "href": "https://api-sandbox.gocardless.com",
+      "rel": "self"
+    }
+  ],
+  "title": "GoCardless Enterprise API"
+}

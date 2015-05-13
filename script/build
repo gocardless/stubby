@@ -1,0 +1,9 @@
+
+PATH=$PATH:./node_modules/.bin
+
+browserify index.js --standalone stubby > dist/stubby-bundle.js
+
+browserify modules/schema-validator.js --standalone stubby-schema-module > dist/stubby-schema-validator-bundle.js
+
+uglifyjs dist/stubby-bundle.js > dist/stubby-bundle.min.js
+uglifyjs dist/stubby-schema-validator-bundle.js > dist/stubby-schema-validator-bundle.min.js
