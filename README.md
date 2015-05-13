@@ -37,7 +37,8 @@ $.get('/foo?b=1', function(response) {
 
 ### Modules:
 
-**How to setup a module:**
+#### How to setup a module:
+
 The included modules in the `modules/` folder are optional, officially supported parts of this project to supplement the functionality of stubby but also to keep the core lightweight. Eventually, these may be seperated into their own modules. Modules are registered by calling:
 
 ```js
@@ -46,11 +47,14 @@ var stubby = new stubby.Stubb();
 stubby.addModule(addonModule);
 ```
 
-**schema-validator**:
+#### schema-validator:
 
-While stubby doesn't support json schema validation out of the box, a module is included within the modules folder with a test in spec/modules that allows for schema validation on all responses and requests that are stubbed, allowing for request data to be validated without being explicitly defined in the stub. This allows for verifications of proper stubbing to match with a JSON schema api. To setup the validator, add a schema by calling `var module = new window.stubbySchemaModule(); validator.addSchema('/', schemaJSON);`. The module is bundled in `dist/stubby-schema-validator-bundle.js`, which can be included exposing the module to the global `window` object.
+While stubby doesn't support json schema validation out of the box, the included schema-validator module validates stubs across a JSON hyperschema. The module is included within the modules folder with a test in spec/modules validating all stubbed requests, checking request bodies against the schema instead of manually coding them into the matcher.  
+This verification of proper stubbing also prevents errors in mocking by matching across a canonical schema.
 
-**chaos-monkey**:
+To setup the validator, add a schema by calling `var module = new window.stubbySchemaModule(); validator.addSchema('/', schemaJSON);`. The module is bundled in `dist/stubby-schema-validator-bundle.js`, which can be included exposing the module to the global `window` object.
+
+#### chaos-monkey:
 
 A demo module that responds with random http status codes instead of the ones specified with the stub with the option `{chaos: true}` is set in the stub.
 It also verifies that the response http status is equal to 42 in order to allow for chaos.
