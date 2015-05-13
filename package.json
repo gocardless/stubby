@@ -7,7 +7,7 @@
     "example": "example"
   },
   "scripts": {
-    "test": "phantomjs spec/run-jasmine.js spec/test.html && phantomjs spec/run-jasmine.js spec/test_global.html",
+    "test": "./script/test",
     "build": "./script/build"
   },
   "repository": {

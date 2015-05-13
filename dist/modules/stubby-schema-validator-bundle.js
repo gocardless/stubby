@@ -14633,7 +14633,7 @@ if (typeof module === 'undefined') {
       throw new Error(['[stubby schema-validator] Missing ', dep, ' library.'].join(' '));
     }
   });
-  window.schemaValidator = StubbySchemaValidatorModule(deps);
+  window.stubbySchemaValidator = StubbySchemaValidatorModule(deps);
 } else {
   module.exports = StubbySchemaValidatorModule({
     lodash: require('lodash'),

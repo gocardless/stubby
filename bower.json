@@ -1,6 +1,8 @@
 {
   "name": "stubby",
-  "main": ["dist/stubby-bundle.js"],
+  "main": [
+    "dist/stubby-bundle.js"
+  ],
   "version": "0.0.2",
   "homepage": "https://github.com/gocardless/stubby",
   "authors": [
@@ -18,7 +20,8 @@
   "dependencies": {
     "pretender": "~0.6.0",
     "query-string": "~1.0.0",
-    "lodash": "~3.1.0"
+    "lodash": "~3.1.0",
+    "tv4": "~1.1.9"
   },
   "devDependencies": {
     "jasmine": "~2.2.1"

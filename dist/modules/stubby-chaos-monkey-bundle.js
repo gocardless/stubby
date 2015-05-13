@@ -5,7 +5,7 @@
   * Stubby Chaos Money Demo Module
   */
 
-var StubbyChaosMoneyModule = function(deps) {
+var StubbyChaosMonkey = function(deps) {
 
   /* min is inclusive, and max is exclusive */
   var getRandomArbitrary = function(min, max) {
@@ -50,13 +50,10 @@ var StubbyChaosMoneyModule = function(deps) {
 
 
 if (typeof module === 'undefined') {
-  window.stubbyChaosMoneyModule = StubbyChaosMoneyModule;
+  window.stubbyChaosMonkey = StubbyChaosMonkey;
 } else {
-  module.exports = StubbyChaosMoneyModule;
+  module.exports = StubbyChaosMonkey;
 }
-
-
-
 
 },{}]},{},[1])(1)
 });

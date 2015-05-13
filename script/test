@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#
+# Stubby Test Script
+# Author: iain nash
+# Todo: Replace with make?
+#
+
+PATH=$PATH:./node_modules/.bin
+
+echo 'Browserify Modules Test: '
+phantomjs spec/run-jasmine.js spec/test.html
+
+echo 'Global Modules Test: '
+phantomjs spec/run-jasmine.js spec/test_global.html
