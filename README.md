@@ -34,3 +34,8 @@ $.get('/foo?b=1', function(response) {
 	}
 })
 
+### Limitations:
+
+Since stubby was created for JSON apis, it might be better to use the raw pretender API instead of stubby for other types of data.
+
+Additionally, pretender doesn't allow for mocking JSONP or cross-origin ajax requests, so stubby only works for the same hostname/protocol/port ajax requests.

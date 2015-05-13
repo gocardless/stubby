@@ -1,0 +1,40 @@
+{
+  "name": "stubby",
+  "description": "### AJAX Testing Stub Library",
+  "version": "0.0.2",
+  "main": "stubby.js",
+  "directories": {
+    "example": "example"
+  },
+  "scripts": {
+    "test": "phantomjs spec/run-jasmine.js spec/test.html && phantomjs spec/run-jasmine.js spec/test_global.html",
+    "build": "browserify stubby-browserify.js --standalone stubby > dist/stubby-bundle.js && uglifyjs dist/stubby-bundle.js > dist/stubby-bundle.min.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gocardless/stubby.git"
+  },
+  "keywords": [
+    "stubby",
+    "pretender",
+    "ajax",
+    "testing",
+    "mocking"
+  ],
+  "author": "Iain Nash",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gocardless/stubby/issues"
+  },
+  "homepage": "https://github.com/gocardless/stubby",
+  "dependencies": {
+    "lodash": "^3.8.0",
+    "pretender": "git://github.com/iainnash/pretender#master",
+    "query-string": "^2.1.0"
+  },
+  "devDependencies": {
+    "browserify": "^10.1.3",
+    "jasmine": "^2.3.1",
+    "uglifyjs": "^2.4.10"
+  }
+}
