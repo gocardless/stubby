@@ -9,7 +9,8 @@
   "scripts": {
     "test": "./script/test",
     "build": "./script/build",
-    "demo": "./script/demo"
+    "demo": "./script/demo",
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",

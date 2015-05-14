@@ -62,7 +62,7 @@ You should also [consult the Stubby specs](https://github.com/gocardless/stubby/
 You can create a new instance of Stubby by initialising it:
 
 ```js
-var stubby = new stubby.Stubby();
+var stubby = new Stubby();
 ```
 
 The instance provides the following methods that can be called:
@@ -89,7 +89,7 @@ The included modules in the `modules/` folder are optional, officially supported
 
 ```js
 var addonModule = new RandomAddonModule();
-var stubby = new stubby.Stubby();
+var stubby = new window.Stubby();
 stubby.addModule(addonModule);
 ```
 
@@ -124,8 +124,8 @@ While Stubby doesn't support JSON Schema validation out of the box, the included
 To setup the validator, add a schema like so:
 
 ```js
-var stubby = new stubby.Stubby();
-var validator = new window.stubbySchemaValidator();
+var stubby = new Stubby();
+var validator = new window.StubbySchemaValidator();
 validator.addSchema('/', schemaJSON);
 stubby.addModule(validator);
 ```

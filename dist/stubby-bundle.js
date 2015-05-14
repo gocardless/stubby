@@ -1,4 +1,4 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.stubby = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Stubby = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -13700,7 +13700,7 @@ exports.stringify = function (obj) {
 * - route-recognizer [bower_components/route-recognizer/dist/route-recognizer.js]
 */
 
-var stubby = (function(deps) {
+var stubbyFactory = function(deps) {
 
   var Pretender = deps.pretender;
   var _ = deps.lodash;
@@ -13942,23 +13942,23 @@ var stubby = (function(deps) {
   };
 
 
-  return {Stubby: Stubby};
-});
+  return Stubby;
+};
 
 if (typeof module === 'undefined') {
-  var deps = {
-    'lodash': window._,
-    'pretender': window.Pretender,
-    'querystring': window.queryString
+  var dependencies = {
+    lodash: window._,
+    pretender: window.Pretender,
+    querystring: window.queryString
   };
-  Object.keys(deps).forEach(function(dep) {
-    if (typeof deps[dep] === 'undefined') {
-      throw new Error(['[stubby] Missing ', dep, ' library.'].join(' '));
+  Object.keys(dependencies).forEach(function(dependencyName) {
+    if (typeof dependencies[dependencyName] === 'undefined') {
+      throw new Error(['[stubby] Missing `', dependencyName, '` library.'].join(''));
     }
   });
-  window.stubby = stubby(deps);
+  window.Stubby = stubbyFactory(dependencies);
 } else {
-  module.exports = stubby;
+  module.exports = stubbyFactory;
 }
 
 
@@ -13968,9 +13968,11 @@ if (typeof module === 'undefined') {
 var Stubby = require('./stubby')({
 	lodash: require('lodash'),
 	pretender: require('pretender'),
-	querystring: require('query-string'), 
+	querystring: require('query-string')
 });
 
 module.exports = Stubby;
+
+
 },{"./stubby":6,"lodash":1,"pretender":3,"query-string":4}]},{},[7])(7)
 });

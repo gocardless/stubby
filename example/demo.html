@@ -19,9 +19,29 @@
         padding: 8px;
         cursor: pointer;
       }
+      #app li:hover {
+        text-decoration: underline;
+      }
+      #modal-container {
+        position: fixed;
+        top: 20px;
+        margin: 0 auto;
+        pointer-events: none;
+      }
+      #modal-container code {
+        background: rgba(255, 255, 255, 0.7);
+        display: block;
+        width: 70%;
+        padding: 10px;
+        margin: 0 auto;
+        border: 2px solid grey;
+      }
     </style>
   </head>
   <body>
+    <div id="modal-container">
+
+    </div>
     <div id="app">
       <h2>Favourite internet widgets:</h2>
       <ul id="widget-list">

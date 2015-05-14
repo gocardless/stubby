@@ -4,16 +4,16 @@
   * Stubby Chaos Money Demo Module
   */
 
-var StubbyChaosMonkey = function(deps) {
+var StubbyChaosMonkey = function() {
 
   /* min is inclusive, and max is exclusive */
   var getRandomArbitrary = function(min, max) {
-      return Math.random() * (max - min) + min;
-  }
+    return Math.random() * (max - min) + min;
+  };
 
   var getRandomHTTPStatus = function() {
     return getRandomArbitrary(100, 600);
-  }
+  };
 
   this.register = function(handler) {
     // Request is empty on route setup.
@@ -36,20 +36,19 @@ var StubbyChaosMonkey = function(deps) {
   };
 
   this.onRequestSetup = function(request, stub) {
-    // noop
+    console.log('[requestsetup] ', request, stub);
   };
 
   this.onRequestExecute = function(request, stub) {
     if (stub.internal.options.chaos) {
       stub.response.status = getRandomHTTPStatus();
     }
-
   };
 };
 
 
 if (typeof module === 'undefined') {
-  window.stubbyChaosMonkey = StubbyChaosMonkey;
+  window.StubbyChaosMonkey = StubbyChaosMonkey;
 } else {
   module.exports = StubbyChaosMonkey;
 }

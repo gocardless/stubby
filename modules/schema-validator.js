@@ -5,14 +5,15 @@
   * Depends on tv4, lodash, and RouteRecognizer
   */
 
-var StubbySchemaValidatorModule = function(deps) {
+var stubbySchemaValidatorModule = function(deps) {
   return function() {
 
     var _ = deps.lodash;
     this.validator = deps.tv4.freshApi();
     this.schemaCount = 0;
     this.hyperschemaUrls = {};
-    this.router = new deps.routerecognizer();
+    var RouteRecognizer = deps.routerecognizer;
+    this.router = new RouteRecognizer();
 
     this.addSchema = function(uri, schema) {
       this.validator.addSchema(uri, schema);
@@ -139,24 +140,22 @@ var StubbySchemaValidatorModule = function(deps) {
 
 
 if (typeof module === 'undefined') {
-  var deps = {
-    'lodash': window._,
-    'routerecognizer': window.RouteRecognizer,
-    'tv4': window.tv4
+  var dependencies = {
+    lodash: window._,
+    routerecognizer: window.RouteRecognizer,
+    tv4: window.tv4
   };
-  Object.keys(deps).forEach(function(dep) {
-    if (typeof deps[dep] === 'undefined') {
-      throw new Error(['[stubby schema-validator] Missing ', dep, ' library.'].join(' '));
+  Object.keys(dependencies).forEach(function(dependency) {
+    if (typeof dependencies[dependency] === 'undefined') {
+      throw new Error(['[stubby schema-validator] Missing ', dependency, ' library.'].join(' '));
     }
   });
-  window.stubbySchemaValidator = StubbySchemaValidatorModule(deps);
+  window.StubbySchemaValidator = stubbySchemaValidatorModule(dependencies);
 } else {
-  module.exports = StubbySchemaValidatorModule({
+  module.exports = stubbySchemaValidatorModule({
     lodash: require('lodash'),
     routerecognizer: require('route-recognizer'),
     tv4: require('tv4')
   });
 }
-
-
 

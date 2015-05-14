@@ -1,4 +1,4 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.stubbySchemaValidator = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.StubbySchemaValidator = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -14489,14 +14489,15 @@ return tv4; // used by _header.js to globalise.
   * Depends on tv4, lodash, and RouteRecognizer
   */
 
-var StubbySchemaValidatorModule = function(deps) {
+var stubbySchemaValidatorModule = function(deps) {
   return function() {
 
     var _ = deps.lodash;
     this.validator = deps.tv4.freshApi();
     this.schemaCount = 0;
     this.hyperschemaUrls = {};
-    this.router = new deps.routerecognizer();
+    var RouteRecognizer = deps.routerecognizer;
+    this.router = new RouteRecognizer();
 
     this.addSchema = function(uri, schema) {
       this.validator.addSchema(uri, schema);
@@ -14623,26 +14624,24 @@ var StubbySchemaValidatorModule = function(deps) {
 
 
 if (typeof module === 'undefined') {
-  var deps = {
-    'lodash': window._,
-    'routerecognizer': window.RouteRecognizer,
-    'tv4': window.tv4
+  var dependencies = {
+    lodash: window._,
+    routerecognizer: window.RouteRecognizer,
+    tv4: window.tv4
   };
-  Object.keys(deps).forEach(function(dep) {
-    if (typeof deps[dep] === 'undefined') {
-      throw new Error(['[stubby schema-validator] Missing ', dep, ' library.'].join(' '));
+  Object.keys(dependencies).forEach(function(dependency) {
+    if (typeof dependencies[dependency] === 'undefined') {
+      throw new Error(['[stubby schema-validator] Missing ', dependency, ' library.'].join(' '));
     }
   });
-  window.stubbySchemaValidator = StubbySchemaValidatorModule(deps);
+  window.StubbySchemaValidator = stubbySchemaValidatorModule(dependencies);
 } else {
-  module.exports = StubbySchemaValidatorModule({
+  module.exports = stubbySchemaValidatorModule({
     lodash: require('lodash'),
     routerecognizer: require('route-recognizer'),
     tv4: require('tv4')
   });
 }
-
-
 
 
 },{"lodash":1,"route-recognizer":2,"tv4":3}]},{},[4])(4)
