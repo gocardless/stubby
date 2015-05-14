@@ -8,7 +8,17 @@ Stubby will also validate any stubs given to it. URL parameters are treated as s
 
 Stubby allows for features to be added as plugins, such as JSON schema validation of requests and mocks, along with potential additional verifications for mocks preventing invalid mocks from being created. The library comes with a module for validating stubs against a [JSON Schema](http://json-schema.org/).
 
-The JSON Schema Validation docs can be found at (schema-validator docs)[docs/modules/schema-validator.md].
+## Installing Stubby
+
+There are two ways you can use Stubby. The first is to simply add `dist/stubby-bundle.min.js` to your page. This is a Browserify compiled build that includes Stubby and all its dependencies.
+
+If you'd rather deal with loading the dependencies yourself, you should include `stubby.js` along with its dependencies, which are:
+
+- [RouteRecognizer](https://github.com/tildeio/route-recognizer)
+- [Pretender](https://github.com/trek/pretender)
+- [LoDash](https://github.com/lodash/lodash)
+
+If you find any bugs or issues with Stubby, please feel free to raise an issue on this repository.
 
 ## Usage Examples:
 
@@ -57,15 +67,7 @@ If you try to stub a request that is already stubbed, Stubby will error. You sho
 
 You should also [consult the Stubby specs](https://github.com/gocardless/stubby/blob/master/spec/stubby.spec.js) for many examples of how to stub requests.
 
-### Stubby API
-
-You can create a new instance of Stubby by initialising it:
-
-```js
-var stubby = new Stubby();
-```
-
-The instance provides the following methods that can be called:
+An instance of `Stubby` also has the following methods that can be called:
 
 ##### `addModule(module)`
 
@@ -73,7 +75,7 @@ Adds a module to Stubby. See below for what these modules can do and how to writ
 
 ##### `passthrough(url)`
 
-By default Stubby blocks all requests, and will error if it gets a request that it can't match to a Stub. You can use this method to tell Stubby that it's fine to let requests matching this URL to hit the network. `stubby.passthrough('/foo')` would mean any request to `/foo` hits the network.
+By default Stubby blocks all requests, and will error if it gets a request that it can't match to a Stub. You can use this method to tell Stubby that it's fine to let requests matching this URL to hit the network. `stubby.passthrough('/foo')` would mean any `GET` request to `/foo` hits the network. It is currently only possible to passthrough on `GET` requests.
 
 ##### `verifyNoOutstandingRequests()`
 
