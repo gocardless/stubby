@@ -72,6 +72,42 @@ describe('stubbing a URL', function() {
     });
   });
 
+  it('lets you match on headers', function(done) {
+    stubby.stub({
+      url: '/foo',
+      headers: {
+        foo: 'bar'
+      }
+    }).respondWith(200, { a: 1 });
+
+    window.get({
+      url: '/foo',
+      headers: {
+        foo: 'bar'
+      }
+    }, function(xhr) {
+      expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
+      done();
+    })
+  });
+
+  it('lets you match on regex headers', function(done) {
+    stubby.stub({
+      url: '/foo',
+      headers: { a: '/\\w|\\d/g' }
+    }).respondWith(200, { a: 1 });
+
+    window.get({
+      url: '/foo',
+      headers: {
+        a: 1
+      }
+    }, function(xhr) {
+      expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
+      done();
+    });
+  });
+
   it('matches on regex query param values', function(done) {
     stubby.stub({
       url: '/foo',
