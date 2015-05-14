@@ -13772,7 +13772,7 @@ var stubbyFactory = function(deps) {
     this.emit('setup', stub, request);
 
     function isRegex(regex) {
-      return regex && regex.match(/^\/(.+)\/([gimy])?$/);
+      return regex && regex.match && regex.match(/^\/(.+)\/([gimy])?$/);
     }
 
     function testRegex(regex, test) {
@@ -13799,9 +13799,9 @@ var stubbyFactory = function(deps) {
       var stubHeaderValue = stub.request.headers[requestHeader];
       var requestHeaderValue = request.requestHeaders[requestHeader];
 
-      // special case JSON, else we'd have to specify it in every stub
-      // which would be really annoying
-      if (requestHeader === 'Content-Type' && _.includes(requestHeaderValue, 'application/json')) {
+      if (!_.includes(Object.keys(stub.request.headers), requestHeader)) {
+        // if the request header wasn't in the stub, then just
+        // ignore it and don't match against it
         return true;
       }
 
