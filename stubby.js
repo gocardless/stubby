@@ -102,14 +102,14 @@ var stubby = (function(deps) {
 
     var dataRequestMatch = _.isEqual(stub.request.data, data);
 
-    var headersMatch = _.every(_.pairs(request.headers), function(matchHeader) {
-      var headerTest = matchHeader[1];
-      var headerToTest = request.requestHeaders[matchHeader[0]];
+    var headersMatch = _.every(Object.keys(request.headers || {}), function(matchHeaderKey) {
+      var headerTest = request.headers[matchHeaderKey];
+      var headerToTest = request.requestHeaders[matchHeaderKey];
 
       if (!headerToTest) {
         return false;
       }
-      if (isRegex(matchHeader[1]) && testRegex(headerTest, headerToTest)) {
+      if (isRegex(headerTest) && testRegex(headerTest, headerToTest)) {
         return true;
       }
       if (headerToTest === headerTest) {

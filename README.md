@@ -49,14 +49,38 @@ var stubby = new stubby.Stubby();
 stubby.addModule(addonModule);
 ```
 
-#### schema-validator:
+#### Modules API:
+
+A module needs to expose an javascript object or function with a prototype or method called register.
+The register method is passed an object that listeners within that class can be registered with:
+```js
+function DemoModule(api_version){
+  // Method to register the module as a handler.
+  this.register = function(handler) {
+    // handler.on(event, callback(request, stub), callback context);
+    // Handler called when the route is setup calling `.stub`.
+    handler.on('setup', function(req, stub) { }, this);
+    // Handler called when a route is being matched (allows for changes or checks before matching routes).
+    handler.on('routesetup', function(req, stub) { }, this);
+    // Handler is called when a request is about to be fuffiled by the passed in matching route
+    handler.on('request', function(req, stub) { this.inject_api_version(stub); }, this);
+  };
+  this.inject_api_version = function(stub) {
+    stub.response.headers['api-version'] = api_version;
+  };
+}
+```
+
+#### Included Modules:
+
+- **schema-validator**:
 
 While stubby doesn't support json schema validation out of the box, the included schema-validator module validates stubs across a JSON hyperschema. The module is included within the modules folder with a test in spec/modules validating all stubbed requests, checking request bodies against the schema instead of manually coding them into the matcher.  
 This verification of proper stubbing also prevents errors in mocking by matching across a canonical schema.
 
 To setup the validator, add a schema by calling `var module = new window.stubbySchemaValidator(); validator.addSchema('/', schemaJSON);`. The module is bundled in `dist/stubby-schema-validator-bundle.js`, which can be included exposing the module to the global `window` object.
 
-#### chaos-monkey:
+- **chaos-monkey**:
 
 A demo module that responds with random http status codes instead of the ones specified with the stub with the option `{chaos: true}` is set in the stub.
 It also verifies that the response http status is equal to 42 in order to allow for chaos.
