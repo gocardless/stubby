@@ -108,6 +108,24 @@ describe('stubbing a URL', function() {
     });
   });
 
+  it('ignores headers in the request not present in the stub', function(done) {
+    stubby.stub({
+      url: '/foo',
+      headers: { a: 1 }
+    }).respondWith(200, { a: 1 });
+
+    window.get({
+      url: '/foo',
+      headers: {
+        a: 1,
+        b: 2
+      }
+    }, function(xhr) {
+      expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
+      done();
+    });
+  });
+
   it('matches on regex query param values', function(done) {
     stubby.stub({
       url: '/foo',
