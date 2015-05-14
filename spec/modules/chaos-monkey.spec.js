@@ -49,7 +49,6 @@ describe('uses chaos money to randomise response status codes', function() {
         expect(JSON.parse(xhr.responseText)).toEqual({ ok: false });
       };
 
-
       for (var i = 0; i < 100; i++) {
         window.get('/test', testResponseCheck);
         if (i === 99) {

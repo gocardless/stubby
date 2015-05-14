@@ -61,14 +61,14 @@ var stubbyFactory = function(deps) {
 
     if (!data) { data = {}; }
 
-    return stubs.filter(function(stub) {
+    return _.find(stubs, function(stub) {
       return this.stubMatchesRequest(stub, {
         data: data,
         method: req.method,
-        headers: req.headers,
+        requestHeaders: req.requestHeaders,
         queryParams: req.queryParams
       });
-    }, this)[0];
+    }, this);
   };
 
   Stubby.prototype.stubMatchesRequest = function(stub, request) {
@@ -79,7 +79,7 @@ var stubbyFactory = function(deps) {
     this.emit('setup', stub, request);
 
     function isRegex(regex) {
-      return regex && regex.match(/^\/(.+)\/([gimy])?$/);
+      return regex && regex.match && regex.match(/^\/(.+)\/([gimy])?$/);
     }
 
     function testRegex(regex, test) {
@@ -102,20 +102,21 @@ var stubbyFactory = function(deps) {
 
     var dataRequestMatch = _.isEqual(stub.request.data, data);
 
-    var headersMatch = _.every(Object.keys(request.headers || {}), function(matchHeaderKey) {
-      var headerTest = request.headers[matchHeaderKey];
-      var headerToTest = request.requestHeaders[matchHeaderKey];
+    var headersMatch = _.every(Object.keys(request.requestHeaders || {}), function(requestHeader) {
+      var stubHeaderValue = stub.request.headers[requestHeader];
+      var requestHeaderValue = request.requestHeaders[requestHeader];
 
-      if (!headerToTest) {
-        return false;
-      }
-      if (isRegex(headerTest) && testRegex(headerTest, headerToTest)) {
+      if (!_.includes(Object.keys(stub.request.headers), requestHeader)) {
+        // if the request header wasn't in the stub, then just
+        // ignore it and don't match against it
         return true;
       }
-      if (headerToTest === headerTest) {
+
+      if (isRegex(stubHeaderValue) && testRegex(stubHeaderValue, requestHeaderValue)) {
         return true;
       }
-      return false;
+
+      return _.isEqual(stubHeaderValue, requestHeaderValue);
     });
 
     // Request data doesn't need to match if we're validating.

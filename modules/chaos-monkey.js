@@ -36,7 +36,7 @@ var StubbyChaosMonkey = function() {
   };
 
   this.onRequestSetup = function(request, stub) {
-    console.log('[requestsetup] ', request, stub);
+    // console.log('[requestsetup] ', request, stub);
   };
 
   this.onRequestExecute = function(request, stub) {

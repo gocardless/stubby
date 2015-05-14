@@ -13754,14 +13754,14 @@ var stubbyFactory = function(deps) {
 
     if (!data) { data = {}; }
 
-    return stubs.filter(function(stub) {
+    return _.find(stubs, function(stub) {
       return this.stubMatchesRequest(stub, {
         data: data,
         method: req.method,
-        headers: req.headers,
+        requestHeaders: req.requestHeaders,
         queryParams: req.queryParams
       });
-    }, this)[0];
+    }, this);
   };
 
   Stubby.prototype.stubMatchesRequest = function(stub, request) {
@@ -13795,20 +13795,21 @@ var stubbyFactory = function(deps) {
 
     var dataRequestMatch = _.isEqual(stub.request.data, data);
 
-    var headersMatch = _.every(Object.keys(request.headers || {}), function(matchHeaderKey) {
-      var headerTest = request.headers[matchHeaderKey];
-      var headerToTest = request.requestHeaders[matchHeaderKey];
+    var headersMatch = _.every(Object.keys(request.requestHeaders || {}), function(requestHeader) {
+      var stubHeaderValue = stub.request.headers[requestHeader];
+      var requestHeaderValue = request.requestHeaders[requestHeader];
 
-      if (!headerToTest) {
-        return false;
-      }
-      if (isRegex(headerTest) && testRegex(headerTest, headerToTest)) {
+      // special case JSON, else we'd have to specify it in every stub
+      // which would be really annoying
+      if (requestHeader === 'Content-Type' && _.includes(requestHeaderValue, 'application/json')) {
         return true;
       }
-      if (headerToTest === headerTest) {
+
+      if (isRegex(stubHeaderValue) && testRegex(stubHeaderValue, requestHeaderValue)) {
         return true;
       }
-      return false;
+
+      return _.isEqual(stubHeaderValue, requestHeaderValue);
     });
 
     // Request data doesn't need to match if we're validating.

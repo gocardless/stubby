@@ -19,7 +19,7 @@
     var xhr = new XMLHttpRequest();
     xhr.open(method.toUpperCase(), options.url, !!options.async);
 
-    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    xhr.setRequestHeader('Content-Type', 'application/json');
     Object.keys(options.headers).forEach(function(header) {
       xhr.setRequestHeader(header, options.headers[header]);
     });
