@@ -7,7 +7,7 @@
 * - route-recognizer [bower_components/route-recognizer/dist/route-recognizer.js]
 */
 
-var stubby = (function(deps) {
+var stubbyFactory = function(deps) {
 
   var Pretender = deps.pretender;
   var _ = deps.lodash;
@@ -249,21 +249,21 @@ var stubby = (function(deps) {
 
 
   return {Stubby: Stubby};
-});
+};
 
 if (typeof module === 'undefined') {
-  var deps = {
-    'lodash': window._,
-    'pretender': window.Pretender,
-    'querystring': window.queryString
+  var dependencies = {
+    lodash: window._,
+    pretender: window.Pretender,
+    querystring: window.queryString
   };
-  Object.keys(deps).forEach(function(dep) {
-    if (typeof deps[dep] === 'undefined') {
-      throw new Error(['[stubby] Missing ', dep, ' library.'].join(' '));
+  Object.keys(dependencies).forEach(function(dependencyName) {
+    if (typeof dependencies[dependencyName] === 'undefined') {
+      throw new Error(['[stubby] Missing `', dependencyName, '` library.'].join(''));
     }
   });
-  window.stubby = stubby(deps);
+  window.stubby = stubbyFactory(dependencies);
 } else {
-  module.exports = stubby;
+  module.exports = stubbyFactory;
 }
 
