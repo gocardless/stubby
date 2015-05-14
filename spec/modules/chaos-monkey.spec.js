@@ -4,8 +4,8 @@ describe('uses chaos money to randomise response status codes', function() {
   var stubby;
 
   beforeEach(function() {
-    stubby = new window.stubby.Stubby();
-    stubby.addModule(new window.stubbyChaosMonkey.ChaosMonkey());
+    stubby = new window.Stubby();
+    stubby.addModule(new window.StubbyChaosMonkey());
   });
 
   describe('stubbing out normal requests', function() {

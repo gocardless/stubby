@@ -4,7 +4,7 @@ describe('stubbing a URL', function() {
   var stubby;
 
   beforeEach(function() {
-    stubby = new window.stubby.Stubby();
+    stubby = new window.Stubby();
   });
 
   it('lets a URL be stubbed', function(done) {
@@ -105,13 +105,13 @@ describe('stubbing a URL', function() {
 describe('allows plugins on setup and on request', function() {
   var stubby;
   beforeEach(function() {
-    stubby = new window.stubby.Stubby();
+    stubby = new window.Stubby();
   });
 
   describe('creates a new stub', function() {
     var spies;
     beforeEach(function() {
-      stubby = new window.stubby.Stubby();
+      stubby = new window.Stubby();
       spies = {
         setup: jasmine.createSpy('setup'),
         request: jasmine.createSpy('request'),
@@ -148,7 +148,7 @@ describe('allows plugins on setup and on request', function() {
 describe('verifiying that stubs have been used', function() {
   var stubby;
   beforeEach(function() {
-    stubby = new window.stubby.Stubby();
+    stubby = new window.Stubby();
   });
 
   it('errors if a stub is not used', function() {
@@ -216,7 +216,7 @@ describe('verifiying that stubs have been used', function() {
 describe('stubbing a POST url', function() {
   var stubby;
   beforeEach(function() {
-    stubby = new window.stubby.Stubby();
+    stubby = new window.Stubby();
   });
 
   it('stubs a post URL', function(done) {
@@ -281,7 +281,7 @@ describe('stubbing a POST url', function() {
 describe('stubbing the same URL twice', function() {
   var stubby;
   beforeEach(function() {
-    stubby = new window.stubby.Stubby();
+    stubby = new window.Stubby();
   });
 
   it('fails when a matching stub is redeclared', function() {

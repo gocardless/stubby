@@ -7,9 +7,9 @@ var schema = JSON.parse(schemaStr);
 describe('uses modules to validate json schema', function() {
   var stubby;
   beforeEach(function() {
-    stubby = new window.stubby.Stubby();
+    stubby = new window.Stubby();
 
-    var validator = new window.stubbySchemaValidator.SchemaValidator();
+    var validator = new window.StubbySchemaValidator();
     validator.addSchema('/', schema);
     stubby.addModule(validator);
     return stubby;

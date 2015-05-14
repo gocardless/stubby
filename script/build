@@ -20,7 +20,7 @@ fi
 if [ $FORCE_COMPILE -eq 1 ] || [ "dist/stubby-bundle.js" -ot "dist/stubby-bundle.js" ]
 then
 	printf 'Browserifying base stubby module: '
-	browserify index.js --standalone stubby > dist/stubby-bundle.js
+	browserify index.js --standalone Stubby > dist/stubby-bundle.js
 	uglifyjs dist/stubby-bundle.js > dist/stubby-bundle.min.js
 	echo 'done'
 else
@@ -34,7 +34,7 @@ MODULES=($(ls -d ./modules/*.js))
 for module_raw in "${MODULES[@]}"
 do
 	module=$(basename $module_raw)
-	MODULE_NAME=stubby-${module%.*}
+	MODULE_NAME=Stubby-${module%.*}
 	OUTPUT_FILENAME_BASE="dist/modules/${MODULE_NAME}-bundle"
 	if [ $FORCE_COMPILE -eq 1 ] || [ $module_raw -nt "${OUTPUT_FILENAME_BASE}.js" ]
 	then

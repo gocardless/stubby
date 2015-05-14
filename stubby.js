@@ -248,7 +248,7 @@ var stubbyFactory = function(deps) {
   };
 
 
-  return {Stubby: Stubby};
+  return Stubby;
 };
 
 if (typeof module === 'undefined') {
@@ -262,7 +262,7 @@ if (typeof module === 'undefined') {
       throw new Error(['[stubby] Missing `', dependencyName, '` library.'].join(''));
     }
   });
-  window.stubby = stubbyFactory(dependencies);
+  window.Stubby = stubbyFactory(dependencies);
 } else {
   module.exports = stubbyFactory;
 }

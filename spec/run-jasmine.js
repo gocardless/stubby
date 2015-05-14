@@ -85,7 +85,8 @@ page.open(system.args[1], function(status) {
           var msg;
           for (i = 0; i < failedList.length; ++i) {
             el = failedList[i];
-            name = el.querySelector('.description').innerText.substring(0, name.length - 1);
+            name = el.querySelector('.description').innerText;
+            name = name.substring(0, name.length - 1);
             msg = el.querySelector('.result-message').innerText;
             suite = name.substring(0, name.indexOf(' '));
 
