@@ -16,7 +16,7 @@
  *       }).respondWith(200, userFixture);
  *     }, userFixture);
  *   });
- *   
+ *
  *   afterEach(function() {
  *    stubby.verifyNoOutstandingRequests();
  *   });
@@ -28,6 +28,11 @@
  * });
  *
  */
+
+'use strict';
+
+/*global beforeEach,angular*/
+/*eslint no-eval:0*/
 
 module.exports = function(browser) {
 
@@ -47,9 +52,9 @@ module.exports = function(browser) {
           xmlHTTPReq.send();
           var schema = JSON.parse(xmlHTTPReq.responseText);
 
-          var stubby = new window.stubby.Stubby();
+          var stubby = new window.Stubby();
 
-          var validator = new window.stubbySchemaValidator();
+          var validator = new window.StubbySchemaValidator();
           validator.addSchema('/', schema);
           stubby.addModule(validator);
 
@@ -71,7 +76,7 @@ module.exports = function(browser) {
 
   return {
     verifyNoOutstandingRequests: function() {
-      browser.executeScript(function(){
+      browser.executeScript(function() {
         window.stubbyInstance.verifyNoOutstandingRequest();
       });
     },
@@ -80,31 +85,33 @@ module.exports = function(browser) {
         window.stubbyInstance.passthrough(url);
       });
     },
-    stub: function(options) {
+    stub: function(stubOptions) {
       return {
-        respondWith: function(status, data) {
-          browser.executeScript(function(options, status, data) {
-            window.stubbyInstance.stub(options).respondWith(status, data);
-          }, options, status, data);
+        respondWith: function(responseStatus, responseData) {
+          browser.executeScript(function(innerStubOptions, innerResponseStatus, innerResponseData) {
+            window.stubbyInstance.stub(innerStubOptions).respondWith(innerResponseStatus, innerResponseData);
+          }, stubOptions, responseStatus, responseData);
         }
       };
     },
     withModule: function() {
       var args = Array.prototype.slice.call(arguments, 0);
-      var modName = args.shift();
+      var innerModName = args.shift();
       var fn = args.shift();
 
-      if (typeof modName !== 'string')
+      if (typeof innerModName !== 'string') {
         throw new Error('Module Name (arg0) needs to be a string');
-      if (typeof fn !== 'function')
+      }
+      if (typeof fn !== 'function') {
         throw new Error('Function (arg1) needs to be a function');
+      }
 
-      function angularModule(modName, fn, args) {
-        return angular.module(modName, []).run([function() {
-          eval('(' + fn.toString() + ').apply(window, ' + JSON.stringify(args) + ');');
+      function angularModule(passedInnerModName, passedFn, passedArgs) {
+        return angular.module(passedInnerModName, []).run([function() {
+          eval('(' + passedFn.toString() + ').apply(window, ' + JSON.stringify(passedArgs) + ');');
         }]);
       }
-      browser.addMockModule(modName.toString(), angularModule, modName, fn, args);
+      browser.addMockModule(innerModName.toString(), angularModule, innerModName, fn, args);
     }
   };
 };

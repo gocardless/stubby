@@ -88,7 +88,7 @@ describe('stubbing a URL', function() {
     }, function(xhr) {
       expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
       done();
-    })
+    });
   });
 
   it('lets you match on regex headers', function(done) {
