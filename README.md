@@ -160,3 +160,8 @@ Since stubby was created for JSON APIs, it might be better to use the raw preten
 
 Additionally, Pretender doesn't allow for mocking JSONP or cross-origin ajax requests, so stubby only works for the same hostname/protocol/port ajax requests.
 
+
+### Changelog
+
+##### V0.0.1
+- initial release
