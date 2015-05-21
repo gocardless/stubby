@@ -100,7 +100,14 @@ var stubbyFactory = function(deps) {
       }
     });
 
-    var dataRequestMatch = _.isEqual(stub.request.data, data);
+    var dataRequestMatch;
+
+    // if no stub data was given, we just say that we matched
+    if (stub.request.data && !_.isEmpty(stub.request.data)) {
+      dataRequestMatch = _.isEqual(stub.request.data, data);
+    } else {
+      dataRequestMatch = true;
+    }
 
     var headersMatch = _.every(Object.keys(request.requestHeaders || {}), function(requestHeader) {
       var stubHeaderValue = stub.request.headers[requestHeader];

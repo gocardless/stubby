@@ -163,5 +163,9 @@ Additionally, Pretender doesn't allow for mocking JSONP or cross-origin ajax req
 
 ### Changelog
 
+##### V0.0.2
+- stop skipping data matches in schema validation plugin
+- if a request has data but the stub has none defined, it will now match that request to that stub
+
 ##### V0.0.1
 - initial release
