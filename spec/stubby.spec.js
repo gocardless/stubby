@@ -298,10 +298,22 @@ describe('stubbing a POST url', function() {
     });
   });
 
+  it('matches a stub if the stub has no data but the request does', function(done) {
+    stubby.stub({
+      url: '/foo',
+      method: 'POST'
+    }).respondWith(200, { a: 1 });
+
+    window.post({ url: '/foo', data: { b: 2 } }, function(xhr) {
+      expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
+      done();
+    });
+  });
+
   it('can differentiate between POST and PUT data', function(done) {
     stubby.stub({
       url: '/foobar',
-      method: 'GET'
+      method: 'POST'
     }).respondWith(200, { method: 'get' });
 
     stubby.stub({
