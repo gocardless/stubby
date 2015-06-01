@@ -62,6 +62,7 @@ The allowed options for a stub are:
 - `headers`: a list of headers for Stubby to match against
 - `data`: an object that should be present in the request data.
 - `method`: the type of request. Defaults to `GET`.
+- `overrideStub`: pass `true` here to state that this stub should override a matching stub if one exists. Defaults to `false`.
 
 If you try to stub a request that is already stubbed, Stubby will error. You should first call `stubby.remove(options)` to remove the stub, and then restub it.
 
@@ -162,6 +163,9 @@ Additionally, Pretender doesn't allow for mocking JSONP or cross-origin ajax req
 
 
 ### Changelog
+
+##### V0.0.3
+- allow stubs to override existing match with `overrideStub` option
 
 ##### V0.0.2
 - stop skipping data matches in schema validation plugin

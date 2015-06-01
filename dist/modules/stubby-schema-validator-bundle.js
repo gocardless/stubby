@@ -14506,13 +14506,8 @@ var stubbySchemaValidatorModule = function(deps) {
     };
 
     this.register = function(handler) {
-      handler.on('setup', this.onRequestPrepare, this);
       handler.on('request', this.onRequestExecute, this);
       handler.on('routesetup', this.onRequestExecute, this);
-    };
-
-    this.onRequestPrepare = function(stub) {
-      stub.internal.skipDataMatch = true;
     };
 
     this.onRequestExecute = function(request, stub) {

@@ -357,4 +357,17 @@ describe('stubbing the same URL twice', function() {
       stubby.stub({ url: '/foo' }).respondWith(200, { first: false });
     }).toThrow();
   });
+
+  it('lets you override if you pass the overrideStub param', function(done) {
+    stubby.stub({ url: '/foo' }).respondWith(200, { first: true });
+
+    expect(function() {
+      stubby.stub({ url: '/foo', overrideStub: true }).respondWith(200, { first: false });
+    }).not.toThrow();
+
+    window.get('/foo', function(xhr) {
+      expect(JSON.parse(xhr.responseText)).toEqual({ first: false });
+      done();
+    });
+  });
 });

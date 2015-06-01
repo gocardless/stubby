@@ -13793,7 +13793,14 @@ var stubbyFactory = function(deps) {
       }
     });
 
-    var dataRequestMatch = _.isEqual(stub.request.data, data);
+    var dataRequestMatch;
+
+    // if no stub data was given, we just say that we matched
+    if (!_.isEmpty(stub.request.data)) {
+      dataRequestMatch = _.isEqual(stub.request.data, data);
+    } else {
+      dataRequestMatch = true;
+    }
 
     var headersMatch = _.every(Object.keys(request.requestHeaders || {}), function(requestHeader) {
       var stubHeaderValue = stub.request.headers[requestHeader];
@@ -13823,6 +13830,7 @@ var stubbyFactory = function(deps) {
     this.url = urlsplit[0];
     this.internal = {options: options.options || {}};
     this.queryParams = options.params || queryString.parse(urlsplit[1]);
+    this.overrideStub = options.overrideStub || false;
 
     // convert all queryParam values to string
     // this means we don't support nested query params
@@ -13873,8 +13881,13 @@ var stubbyFactory = function(deps) {
       if (!stubby.stubs[this.url]) { stubby.stubs[this.url] = []; }
 
       var matchingStub = _.find(stubby.stubs[this.url], this.stubMatcher(stubby));
+
       if (matchingStub) {
-        throw new Error('Matching stub found. Cannot override.');
+        if (this.overrideStub) {
+          stubby.remove(options);
+        } else {
+          throw new Error('Matching stub found. Cannot override.');
+        }
       }
 
       stubby.stubs[this.url].push(this);
