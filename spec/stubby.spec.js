@@ -91,6 +91,21 @@ describe('stubbing a URL', function() {
     });
   });
 
+  it('lets you stub response headers', function(done) {
+    stubby.stub({
+      url: '/foo',
+    }).respondWith(200, { a: 1 }, {
+      headers: { foo: 'bar' },
+    });
+
+    window.get({
+      url: '/foo',
+    }, function(xhr) {
+      expect(xhr.getResponseHeader('foo')).toEqual('bar');
+      done();
+    });
+  });
+
   it('lets you match on regex headers', function(done) {
     stubby.stub({
       url: '/foo',

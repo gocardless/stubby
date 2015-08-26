@@ -52,7 +52,7 @@ $.get('/foo?b=1', function(response) {
 Given an instance of stubby, you can call `stub` to stub a URL. This returns a `Stubby.StubInternal` object, that you can then call `respondWith` to define what Stubby should return:
 
 ```js
-stubby.stub(options).respondWith(status, data)
+stubby.stub(options).respondWith(status, data, responseOptions)
 ```
 
 The allowed options for a stub are:
@@ -67,6 +67,12 @@ The allowed options for a stub are:
 If you try to stub a request that is already stubbed, Stubby will error. You should first call `stubby.remove(options)` to remove the stub, and then restub it.
 
 You should also [consult the Stubby specs](https://github.com/gocardless/stubby/blob/master/spec/stubby.spec.js) for many examples of how to stub requests.
+
+`respondWith` takes three arguments:
+
+- `status`: the status code that will be returned
+- `data`: the body that will be returned as JSON
+- `responseOptions`: an optional third argument that can set extra options. You can pass in a `headers` object here to set response headers.
 
 An instance of `Stubby` also has the following methods that can be called:
 

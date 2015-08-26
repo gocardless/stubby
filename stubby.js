@@ -250,7 +250,7 @@ var stubbyFactory = function(deps) {
   };
 
   Stubby.prototype.response = function(stub) {
-    var headers = stub.request.headers;
+    var headers = stub.response.headers || {};
 
     if (!('Content-Type' in headers)) { headers['Content-Type'] = 'application/json'; }
 
