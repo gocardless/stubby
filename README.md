@@ -170,6 +170,9 @@ Additionally, Pretender doesn't allow for mocking JSONP or cross-origin ajax req
 
 ### Changelog
 
+##### V0.0.4
+- allow stubs to have response headers specified
+
 ##### V0.0.3
 - allow stubs to override existing match with `overrideStub` option
 
