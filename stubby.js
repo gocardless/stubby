@@ -173,9 +173,12 @@ var stubbyFactory = function(deps) {
     };
 
     this.respondWith = function(status, data, responseOptions) {
+      var url = this.url;
+
       if (typeof status !== 'number') {
         throw new Error('Status (' + JSON.stringify(status) + ') is invalid.');
       }
+
       this.response = {
         data: data || {},
         status: status
@@ -208,7 +211,29 @@ var stubbyFactory = function(deps) {
           ++matchedStub.requestCount;
           return stubby.response(matchedStub);
         } else {
-          throw new Error('Stubby: no stub found\n (attempting to find: ' + JSON.stringify(req) + ')');
+          console.log('Could not match stub for request: ', req);
+
+          var result = {
+            method: req.method,
+            url: url
+          };
+
+          if (!_.isEmpty(req.queryParams)) {
+            _.set(result, 'params', req.queryParams);
+          }
+
+          if (!_.isEmpty(req.requestBody)) {
+            _.set(result, 'data', req.requestBody);
+          }
+
+          console.log(
+            'You can stub this request with:\n\n' +
+            'window.stubby.stub(' +
+            JSON.stringify(result, null, 2) +
+            ')\n' +
+            '.respondWith(' + status + ', ' + JSON.stringify(data, null, 2) + ');\n\n'
+          );
+          throw new Error('Stubby: no stub found for this request.)');
         }
       });
 
