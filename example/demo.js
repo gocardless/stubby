@@ -1,6 +1,7 @@
 'use strict';
 
-var stubby = new stubby.Stubby();
+var stubby = new Stubby();
+
 stubby.stub({ url: '/widgets' }).respondWith(200, [
   { id: 1, colour: '#245454', title: 'iPad', company: 'apple' },
   { id: 2, colour: '#225222', title: 'moto 360º', company: 'motorola' },
