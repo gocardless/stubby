@@ -223,7 +223,7 @@ var stubbyFactory = function(deps) {
           }
 
           if (!_.isEmpty(req.requestBody)) {
-            _.set(result, 'data', req.requestBody);
+            _.set(result, 'data', JSON.parse(req.requestBody));
           }
 
           console.log(
