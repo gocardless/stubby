@@ -218,13 +218,25 @@ var stubbyFactory = function(deps) {
             url: url
           };
 
-          if (!_.isEmpty(req.queryParams)) {
-            _.set(result, 'params', req.queryParams);
-          }
-
-          if (!_.isEmpty(req.requestBody)) {
-            _.set(result, 'data', JSON.parse(req.requestBody));
-          }
+          _.each(
+            {
+              params: req.queryParams,
+              data: req.requestBody,
+              headers: req.requestHeaders
+            },
+            function appendToResult(value, key) {
+              var res;
+              try {
+                res = JSON.parse(value);
+              } catch (err) {
+                res = value;
+              } finally {
+                if (!_.isEmpty(res)) {
+                  _.set(result, key, res);
+                }
+              }
+            }
+          );
 
           console.log(
             'You can stub this request with:\n\n' +
