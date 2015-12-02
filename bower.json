@@ -3,7 +3,7 @@
   "main": [
     "dist/stubby-bundle.js"
   ],
-  "version": "0.0.5",
+  "version": "0.0.6",
   "homepage": "https://github.com/gocardless/stubby",
   "authors": [
     "Iain Nash <iain@gocardless.com>",
