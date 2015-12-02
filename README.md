@@ -170,6 +170,12 @@ Additionally, Pretender doesn't allow for mocking JSONP or cross-origin ajax req
 
 ### Changelog
 
+##### V0.0.6
+- fix schema validation for non-object request payloads
+
+##### V0.0.5
+- print expected stub when no stubs where found
+
 ##### V0.0.4
 - allow stubs to have response headers specified
 
