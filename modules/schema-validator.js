@@ -94,16 +94,20 @@ var stubbySchemaValidatorModule = function(deps) {
       }
 
       var queryParams = this.parseQueryParamsSchema(stub.queryParams);
-      var req = _.extend({}, queryParams, requestData);
 
       // An empty request is valid. (in the case of gocardless' schema)
-      if (_.isEmpty(req)) { return; }
+      if (_.isEmpty(queryParams) && _.isEmpty(requestData)) { return; }
 
-      var valResponse = this.validator.validateMultiple(req, schema, true, false);
-      if (valResponse.errors.length > 0 || valResponse.missing.length > 0) {
-        var stubInfo = stub.request.method + ' ' + stub.url + ' (' + JSON.stringify(req) + ')';
-        throw new Error('Validation Failed for request: ' + stubInfo + ' ' + JSON.stringify(valResponse));
+      function validateReq(validator, req, type) {
+        var valResponse = validator.validateMultiple(req, schema, true, false);
+        if (valResponse.errors.length > 0 || valResponse.missing.length > 0) {
+          var stubInfo = stub.request.method + ' ' + stub.url + ' (' + JSON.stringify(req) + ')';
+          throw new Error('Schema validation failed for ' + type + ': ' + stubInfo + ' ' + JSON.stringify(valResponse));
+        }
       }
+
+      if (!_.isEmpty(queryParams)) { validateReq(this.validator, queryParams, 'query params'); }
+      if (!_.isEmpty(requestData)) { validateReq(this.validator, requestData, 'request data'); }
     };
 
     this.validateEmptyQueryParams = function(stub) {
