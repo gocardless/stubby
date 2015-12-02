@@ -18,10 +18,10 @@
     "bower_components"
   ],
   "dependencies": {
-    "pretender": "~0.6.0",
-    "query-string": "~1.0.0",
-    "lodash": "~3.1.0",
-    "tv4": "~1.1.9"
+    "pretender": "~0.10.1",
+    "query-string": "~2.4.2",
+    "lodash": "~3.10.1",
+    "tv4": "~1.2.7"
   },
   "devDependencies": {
     "jasmine": "~2.2.1"
