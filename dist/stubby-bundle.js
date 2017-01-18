@@ -10,100 +10,7 @@ var Stubby = require('./stubby')({
 module.exports = Stubby;
 
 
-},{"./stubby":9,"lodash":3,"pretender":6,"query-string":7}],2:[function(require,module,exports){
-// shim for using process in browser
-
-var process = module.exports = {};
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = setTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    clearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        setTimeout(drainQueue, 0);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
-},{}],3:[function(require,module,exports){
+},{"./stubby":8,"lodash":2,"pretender":4,"query-string":5}],2:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -12458,7 +12365,7 @@ process.umask = function() { return 0; };
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
@@ -12733,7 +12640,7 @@ process.umask = function() { return 0; };
       verifyState(this);
 
       if (!/^(get|head)$/i.test(this.method)) {
-        if (!this.requestHeaders["Content-Type"] && !(data || '').toString().match('FormData')) {
+        if (!this.requestHeaders["Content-Type"]) {
           this.requestHeaders["Content-Type"] = "text/plain;charset=UTF-8";
         }
 
@@ -12823,7 +12730,7 @@ process.umask = function() { return 0; };
       this.readyState = state;
 
       if (typeof this.onreadystatechange == "function") {
-        this.onreadystatechange(new _Event("readystatechange"));
+        this.onreadystatechange();
       }
 
       this.dispatchEvent(new _Event("readystatechange"));
@@ -12954,7 +12861,364 @@ process.umask = function() { return 0; };
   return fake_xml_http_request;
 
 }));
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
+(function (__dirname){
+(function(window){
+
+var isNode = typeof __dirname !== 'undefined';
+var RouteRecognizer = isNode ? require('route-recognizer') : window.RouteRecognizer;
+var FakeXMLHttpRequest = isNode ? require('fake-xml-http-request') : window.FakeXMLHttpRequest;
+var slice = [].slice;
+
+function Pretender(/* routeMap1, routeMap2, ...*/){
+  maps = slice.call(arguments);
+  // Herein we keep track of RouteRecognizer instances
+  // keyed by HTTP method. Feel free to add more as needed.
+  this.registry = {
+    GET: new RouteRecognizer(),
+    PUT: new RouteRecognizer(),
+    POST: new RouteRecognizer(),
+    DELETE: new RouteRecognizer(),
+    PATCH: new RouteRecognizer(),
+    HEAD: new RouteRecognizer()
+  };
+
+  this.handlers = [];
+  this.handledRequests = [];
+  this.passthroughRequests = [];
+  this.unhandledRequests = [];
+  this.requestReferences = [];
+
+  // reference the native XMLHttpRequest object so
+  // it can be restored later
+  this._nativeXMLHttpRequest = window.XMLHttpRequest;
+
+  // capture xhr requests, channeling them into
+  // the route map.
+  window.XMLHttpRequest = interceptor(this);
+
+  // "start" the server
+  this.running = true;
+
+  // trigger the route map DSL.
+  for(i=0; i < arguments.length; i++){
+    this.map(arguments[i]);
+  }
+}
+
+function interceptor(pretender) {
+  function FakeRequest(){
+    // super()
+    FakeXMLHttpRequest.call(this);
+  }
+  // extend
+  var proto = new FakeXMLHttpRequest();
+  proto.send = function send(){
+    if (!pretender.running) {
+      throw new Error('You shut down a Pretender instance while there was a pending request. '+
+            'That request just tried to complete. Check to see if you accidentally shut down '+
+            'a pretender earlier than you intended to');
+    }
+
+    FakeXMLHttpRequest.prototype.send.apply(this, arguments);
+    if (!pretender.checkPassthrough(this)) {
+      pretender.handleRequest(this);
+    }
+    else {
+      var xhr = createPassthrough(this);
+      xhr.send.apply(xhr, arguments);
+    }
+  };
+
+  // passthrough handling
+  var evts = ['load', 'error', 'timeout', 'progress', 'abort', 'readystatechange'];
+  var lifecycleProps = ['readyState', 'responseText', 'responseXML', 'status', 'statusText'];
+  function createPassthrough(fakeXHR) {
+    var xhr = fakeXHR._passthroughRequest = new pretender._nativeXMLHttpRequest();
+    // listen to all events to update lifecycle properties
+    for (var i = 0; i < evts.length; i++) (function(evt) {
+      xhr['on' + evt] = function(e) {
+        // update lifecycle props on each event
+        for (var i = 0; i < lifecycleProps.length; i++) {
+          var prop = lifecycleProps[i];
+          if (xhr[prop]) {
+            fakeXHR[prop] = xhr[prop];
+          }
+        }
+        // fire fake events where applicable
+        fakeXHR.dispatchEvent(evt, e);
+        if (fakeXHR['on' + evt]) {
+          fakeXHR['on' + evt](e);
+        }
+      };
+    })(evts[i]);
+    xhr.open(fakeXHR.method, fakeXHR.url, fakeXHR.async, fakeXHR.username, fakeXHR.password);
+    xhr.timeout = fakeXHR.timeout;
+    xhr.withCredentials = fakeXHR.withCredentials;
+    for (var h in fakeXHR.requestHeaders) {
+      xhr.setRequestHeader(h, fakeXHR.requestHeaders[h]);
+    }
+    return xhr;
+  }
+  proto._passthroughCheck = function(method, arguments) {
+    if (this._passthroughRequest) {
+      return this._passthroughRequest[method].apply(this._passthroughRequest, arguments);
+    }
+    return FakeXMLHttpRequest.prototype[method].apply(this, arguments);
+  }
+  proto.abort = function abort(){
+    return this._passthroughCheck('abort', arguments);
+  }
+  proto.getResponseHeader = function getResponseHeader(){
+    return this._passthroughCheck('getResponseHeader', arguments);
+  }
+  proto.getAllResponseHeaders = function getAllResponseHeaders(){
+    return this._passthroughCheck('getAllResponseHeaders', arguments);
+  }
+
+  FakeRequest.prototype = proto;
+  return FakeRequest;
+}
+
+function verbify(verb){
+  return function(path, handler, async){
+    this.register(verb, path, handler, async);
+  };
+}
+
+function throwIfURLDetected(url){
+  var HTTP_REGEXP = /^https?/;
+  var message;
+
+  if(HTTP_REGEXP.test(url)) {
+    var parser = window.document.createElement('a');
+    parser.href = url;
+
+    message = "Pretender will not respond to requests for URLs. It is not possible to accurately simluate the browser's CSP. "+
+              "Remove the " + parser.protocol +"//"+ parser.hostname +" from " + url + " and try again";
+    throw new Error(message)
+  }
+}
+
+var PASSTHROUGH = {};
+
+Pretender.prototype = {
+  get: verbify('GET'),
+  post: verbify('POST'),
+  put: verbify('PUT'),
+  'delete': verbify('DELETE'),
+  patch: verbify('PATCH'),
+  head: verbify('HEAD'),
+  map: function(maps){
+    maps.call(this);
+  },
+  register: function register(verb, path, handler, async){
+    if (!handler) {
+      throw new Error("The function you tried passing to Pretender to handle " + verb + " " + path + " is undefined or missing.");
+    }
+
+    handler.numberOfCalls = 0;
+    handler.async = async;
+    this.handlers.push(handler);
+
+    var registry = this.registry[verb];
+    registry.add([{path: path, handler: handler}]);
+  },
+  passthrough: PASSTHROUGH,
+  checkPassthrough: function(request) {
+    var verb = request.method.toUpperCase();
+    var path = request.url;
+
+    throwIfURLDetected(path);
+
+    verb = verb.toUpperCase();
+
+    var recognized = this.registry[verb].recognize(path);
+    var match = recognized && recognized[0];
+    if (match && match.handler == PASSTHROUGH) {
+      this.passthroughRequests.push(request);
+      this.passthroughRequest(verb, path, request);
+      return true;
+    }
+
+    return false;
+  },
+  handleRequest: function handleRequest(request){
+    var verb = request.method.toUpperCase();
+    var path = request.url;
+
+    var handler = this._handlerFor(verb, path, request);
+
+    if (handler) {
+      handler.handler.numberOfCalls++;
+      var async = handler.handler.async;
+      this.handledRequests.push(request);
+
+      try {
+        var statusHeadersAndBody = handler.handler(request),
+            status = statusHeadersAndBody[0],
+            headers = this.prepareHeaders(statusHeadersAndBody[1]),
+            body = this.prepareBody(statusHeadersAndBody[2]),
+            pretender = this;
+
+        this.handleResponse(request, async, function() {
+          request.respond(status, headers, body);
+          pretender.handledRequest(verb, path, request);
+        });
+      } catch (error) {
+        this.erroredRequest(verb, path, request, error);
+        this.resolve(request);
+      }
+    } else {
+      this.unhandledRequests.push(request);
+      this.unhandledRequest(verb, path, request);
+    }
+  },
+  handleResponse: function handleResponse(request, strategy, callback) {
+    strategy = typeof strategy === 'function' ? strategy() : strategy;
+
+    if (strategy === false) {
+      callback();
+    } else {
+      var pretender = this;
+      pretender.requestReferences.push({
+        request: request,
+        callback: callback
+      });
+
+      if (strategy !== true) {
+        setTimeout(function() {
+          pretender.resolve(request);
+        }, typeof strategy === 'number' ? strategy : 0);
+      }
+    }
+  },
+  resolve: function resolve(request) {
+    for(var i = 0, len = this.requestReferences.length; i < len; i++) {
+      var res = this.requestReferences[i];
+      if (res.request === request) {
+        res.callback();
+        this.requestReferences.splice(i, 1);
+        break;
+      }
+    }
+  },
+  requiresManualResolution: function(verb, path) {
+    var handler = this._handlerFor(verb.toUpperCase(), path, {});
+    if (!handler) { return false; }
+
+    var async = handler.handler.async;
+    return typeof async === 'function' ? async() === true : async === true;
+  },
+  prepareBody: function(body) { return body; },
+  prepareHeaders: function(headers) { return headers; },
+  handledRequest: function(verb, path, request) { /* no-op */},
+  passthroughRequest: function(verb, path, request) { /* no-op */},
+  unhandledRequest: function(verb, path, request) {
+    throw new Error("Pretender intercepted "+verb+" "+path+" but no handler was defined for this type of request");
+  },
+  erroredRequest: function(verb, path, request, error){
+    error.message = "Pretender intercepted "+verb+" "+path+" but encountered an error: " + error.message;
+    throw error;
+  },
+  _handlerFor: function(verb, path, request){
+    var registry = this.registry[verb];
+    var matches = registry.recognize(path);
+
+    var match = matches ? matches[0] : null;
+    if (match) {
+      request.params = match.params;
+      request.queryParams = matches.queryParams;
+    }
+
+    return match;
+  },
+  shutdown: function shutdown(){
+    window.XMLHttpRequest = this._nativeXMLHttpRequest;
+
+    // "stop" the server
+    this.running = false;
+  }
+};
+
+if (isNode) {
+  module.exports = Pretender;
+} else {
+  window.Pretender = Pretender;
+}
+
+})(window);
+
+}).call(this,"/node_modules/pretender")
+},{"fake-xml-http-request":3,"route-recognizer":7}],5:[function(require,module,exports){
+'use strict';
+var strictUriEncode = require('strict-uri-encode');
+
+exports.extract = function (str) {
+	return str.split('?')[1] || '';
+};
+
+exports.parse = function (str) {
+	if (typeof str !== 'string') {
+		return {};
+	}
+
+	str = str.trim().replace(/^(\?|#|&)/, '');
+
+	if (!str) {
+		return {};
+	}
+
+	return str.split('&').reduce(function (ret, param) {
+		var parts = param.replace(/\+/g, ' ').split('=');
+		// Firefox (pre 40) decodes `%3D` to `=`
+		// https://github.com/sindresorhus/query-string/pull/37
+		var key = parts.shift();
+		var val = parts.length > 0 ? parts.join('=') : undefined;
+
+		key = decodeURIComponent(key);
+
+		// missing `=` should be `null`:
+		// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
+		val = val === undefined ? null : decodeURIComponent(val);
+
+		if (!ret.hasOwnProperty(key)) {
+			ret[key] = val;
+		} else if (Array.isArray(ret[key])) {
+			ret[key].push(val);
+		} else {
+			ret[key] = [ret[key], val];
+		}
+
+		return ret;
+	}, {});
+};
+
+exports.stringify = function (obj) {
+	return obj ? Object.keys(obj).sort().map(function (key) {
+		var val = obj[key];
+
+		if (Array.isArray(val)) {
+			return val.sort().map(function (val2) {
+				return strictUriEncode(key) + '=' + strictUriEncode(val2);
+			}).join('&');
+		}
+
+		return strictUriEncode(key) + '=' + strictUriEncode(val);
+	}).filter(function (x) {
+		return x.length > 0;
+	}).join('&') : '';
+};
+
+},{"strict-uri-encode":6}],6:[function(require,module,exports){
+'use strict';
+module.exports = function (str) {
+	return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
+		return '%' + c.charCodeAt(0).toString(16);
+	});
+};
+
+},{}],7:[function(require,module,exports){
 (function() {
     "use strict";
     function $$route$recognizer$dsl$$Target(path, matcher, delegate) {
@@ -13608,477 +13872,7 @@ process.umask = function() { return 0; };
 }).call(this);
 
 
-},{}],6:[function(require,module,exports){
-(function (process){
-(function(self) {
-'use strict';
-
-var appearsBrowserified = typeof self !== 'undefined' &&
-                          typeof process !== 'undefined' &&
-                          Object.prototype.toString.call(process) === '[object Object]';
-
-var RouteRecognizer = appearsBrowserified ? require('route-recognizer') : self.RouteRecognizer;
-var FakeXMLHttpRequest = appearsBrowserified ? require('fake-xml-http-request') : self.FakeXMLHttpRequest;
-
-/**
- * parseURL - decompose a URL into its parts
- * @param  {String} url a URL
- * @return {Object} parts of the URL, including the following
- *
- * 'https://www.yahoo.com:1234/mypage?test=yes#abc'
- *
- * {
- *   host: 'www.yahoo.com:1234',
- *   protocol: 'https:',
- *   search: '?test=yes',
- *   hash: '#abc',
- *   href: 'https://www.yahoo.com:1234/mypage?test=yes#abc',
- *   pathname: '/mypage',
- *   fullpath: '/mypage?test=yes'
- * }
- */
-function parseURL(url) {
-  // TODO: something for when document isn't present... #yolo
-  var anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.fullpath = anchor.pathname + (anchor.search || '') + (anchor.hash || '');
-  return anchor;
-}
-
-
-/**
- * Registry
- *
- * A registry is a map of HTTP verbs to route recognizers.
- */
-
-function Registry(/* host */) {
-  this.verbs = {
-    GET: new RouteRecognizer(),
-    PUT: new RouteRecognizer(),
-    POST: new RouteRecognizer(),
-    DELETE: new RouteRecognizer(),
-    PATCH: new RouteRecognizer(),
-    HEAD: new RouteRecognizer(),
-    OPTIONS: new RouteRecognizer()
-  };
-}
-
-/**
- * Hosts
- *
- * a map of hosts to Registries, ultimately allowing
- * a per-host-and-port, per HTTP verb lookup of RouteRecognizers
- */
-function Hosts() {
-  this._registries = {};
-}
-
-/**
- * Hosts#forURL - retrieve a map of HTTP verbs to RouteRecognizers
- *                for a given URL
- *
- * @param  {String} url a URL
- * @return {Registry}   a map of HTTP verbs to RouteRecognizers
- *                      corresponding to the provided URL's
- *                      hostname and port
- */
-Hosts.prototype.forURL = function(url) {
-  var host = parseURL(url).host;
-  var registry = this._registries[host];
-
-  if (registry === undefined) {
-    registry = (this._registries[host] = new Registry(host));
-  }
-
-  return registry.verbs;
-};
-
-function Pretender(/* routeMap1, routeMap2, ...*/) {
-  // Herein we keep track of RouteRecognizer instances
-  // keyed by HTTP method. Feel free to add more as needed.
-  this.hosts = new Hosts();
-
-  this.handlers = [];
-  this.handledRequests = [];
-  this.passthroughRequests = [];
-  this.unhandledRequests = [];
-  this.requestReferences = [];
-
-  // reference the native XMLHttpRequest object so
-  // it can be restored later
-  this._nativeXMLHttpRequest = self.XMLHttpRequest;
-
-  // capture xhr requests, channeling them into
-  // the route map.
-  self.XMLHttpRequest = interceptor(this);
-
-  // 'start' the server
-  this.running = true;
-
-  // trigger the route map DSL.
-  for (var i = 0; i < arguments.length; i++) {
-    this.map(arguments[i]);
-  }
-}
-
-function interceptor(pretender) {
-  function FakeRequest() {
-    // super()
-    FakeXMLHttpRequest.call(this);
-  }
-  // extend
-  var proto = new FakeXMLHttpRequest();
-  proto.send = function send() {
-    if (!pretender.running) {
-      throw new Error('You shut down a Pretender instance while there was a pending request. ' +
-            'That request just tried to complete. Check to see if you accidentally shut down ' +
-            'a pretender earlier than you intended to');
-    }
-
-    FakeXMLHttpRequest.prototype.send.apply(this, arguments);
-    if (!pretender.checkPassthrough(this)) {
-      pretender.handleRequest(this);
-    } else {
-      var xhr = createPassthrough(this);
-      xhr.send.apply(xhr, arguments);
-    }
-  };
-
-  // passthrough handling
-  var evts = ['error', 'timeout', 'abort'];
-  var lifecycleProps = ['readyState', 'responseText', 'responseXML', 'status', 'statusText'];
-  function createPassthrough(fakeXHR) {
-    var xhr = fakeXHR._passthroughRequest = new pretender._nativeXMLHttpRequest();
-
-    // Use onload instead of onreadystatechange if the browser supports it
-    if ('onload' in xhr) {
-      evts.push('load');
-    } else {
-      evts.push('readystatechange');
-    }
-
-    // add progress event for async calls
-    if (fakeXHR.async) {
-      evts.push('progress');
-    }
-
-    /*jshint -W083 */
-    // jscs:disable requireCurlyBraces
-    // listen to all events to update lifecycle properties
-    for (var i = 0; i < evts.length; i++) {
-      (function(evt) {
-        xhr['on' + evt] = function(e) {
-          // update lifecycle props on each event
-          for (var i = 0; i < lifecycleProps.length; i++) {
-            var prop = lifecycleProps[i];
-            if (xhr[prop]) {
-              fakeXHR[prop] = xhr[prop];
-            }
-          }
-          // fire fake events where applicable
-          fakeXHR.dispatchEvent(e);
-          if (fakeXHR['on' + evt]) {
-            fakeXHR['on' + evt](e);
-          }
-        };
-      })(evts[i]);
-    }
-    /*jshint +W083 */
-    // jscs:enable requireCurlyBraces
-    xhr.open(fakeXHR.method, fakeXHR.url, fakeXHR.async, fakeXHR.username, fakeXHR.password);
-    if (fakeXHR.async) {
-      xhr.timeout = fakeXHR.timeout;
-      xhr.withCredentials = fakeXHR.withCredentials;
-    }
-    for (var h in fakeXHR.requestHeaders) {
-      xhr.setRequestHeader(h, fakeXHR.requestHeaders[h]);
-    }
-    return xhr;
-  }
-
-  proto._passthroughCheck = function(method, args) {
-    if (this._passthroughRequest) {
-      return this._passthroughRequest[method].apply(this._passthroughRequest, args);
-    }
-    return FakeXMLHttpRequest.prototype[method].apply(this, args);
-  };
-
-  proto.abort = function abort() {
-    return this._passthroughCheck('abort', arguments);
-  };
-
-  proto.getResponseHeader = function getResponseHeader() {
-    return this._passthroughCheck('getResponseHeader', arguments);
-  };
-
-  proto.getAllResponseHeaders = function getAllResponseHeaders() {
-    return this._passthroughCheck('getAllResponseHeaders', arguments);
-  };
-
-  FakeRequest.prototype = proto;
-  return FakeRequest;
-}
-
-function verbify(verb) {
-  return function(path, handler, async) {
-    this.register(verb, path, handler, async);
-  };
-}
-
-function scheduleProgressEvent(request, startTime, totalTime) {
-  setTimeout(function() {
-    if (!request.aborted && !request.status) {
-      var ellapsedTime = new Date().getTime() - startTime.getTime();
-      request.upload._progress(true, ellapsedTime, totalTime);
-      request._progress(true, ellapsedTime, totalTime);
-      scheduleProgressEvent(request, startTime, totalTime);
-    }
-  }, 50);
-}
-
-function isArray(array) {
-  return Object.prototype.toString.call(array) === '[object Array]';
-}
-
-var PASSTHROUGH = {};
-
-Pretender.prototype = {
-  get: verbify('GET'),
-  post: verbify('POST'),
-  put: verbify('PUT'),
-  'delete': verbify('DELETE'),
-  patch: verbify('PATCH'),
-  head: verbify('HEAD'),
-  map: function(maps) {
-    maps.call(this);
-  },
-  register: function register(verb, url, handler, async) {
-    if (!handler) {
-      throw new Error('The function you tried passing to Pretender to handle ' +
-        verb + ' ' + url + ' is undefined or missing.');
-    }
-
-    handler.numberOfCalls = 0;
-    handler.async = async;
-    this.handlers.push(handler);
-
-    var registry = this.hosts.forURL(url)[verb];
-
-    registry.add([{
-      path: parseURL(url).fullpath,
-      handler: handler
-    }]);
-  },
-  passthrough: PASSTHROUGH,
-  checkPassthrough: function checkPassthrough(request) {
-    var verb = request.method.toUpperCase();
-
-    var path = parseURL(request.url).fullpath;
-
-    verb = verb.toUpperCase();
-
-    var recognized = this.hosts.forURL(request.url)[verb].recognize(path);
-    var match = recognized && recognized[0];
-    if (match && match.handler === PASSTHROUGH) {
-      this.passthroughRequests.push(request);
-      this.passthroughRequest(verb, path, request);
-      return true;
-    }
-
-    return false;
-  },
-  handleRequest: function handleRequest(request) {
-    var verb = request.method.toUpperCase();
-    var path = request.url;
-
-    var handler = this._handlerFor(verb, path, request);
-
-    if (handler) {
-      handler.handler.numberOfCalls++;
-      var async = handler.handler.async;
-      this.handledRequests.push(request);
-
-      try {
-        var statusHeadersAndBody = handler.handler(request);
-        if (!isArray(statusHeadersAndBody)) {
-          var note = 'Remember to `return [status, headers, body];` in your route handler.';
-          throw new Error('Nothing returned by handler for ' + path + '. ' + note);
-        }
-
-        var status = statusHeadersAndBody[0],
-            headers = this.prepareHeaders(statusHeadersAndBody[1]),
-            body = this.prepareBody(statusHeadersAndBody[2]),
-            pretender = this;
-
-        this.handleResponse(request, async, function() {
-          request.respond(status, headers, body);
-          pretender.handledRequest(verb, path, request);
-        });
-      } catch (error) {
-        this.erroredRequest(verb, path, request, error);
-        this.resolve(request);
-      }
-    } else {
-      this.unhandledRequests.push(request);
-      this.unhandledRequest(verb, path, request);
-    }
-  },
-  handleResponse: function handleResponse(request, strategy, callback) {
-    var delay = typeof strategy === 'function' ? strategy() : strategy;
-    delay = typeof delay === 'boolean' || typeof delay === 'number' ? delay : 0;
-
-    if (delay === false) {
-      callback();
-    } else {
-      var pretender = this;
-      pretender.requestReferences.push({
-        request: request,
-        callback: callback
-      });
-
-      if (delay !== true) {
-        scheduleProgressEvent(request, new Date(), delay);
-        setTimeout(function() {
-          pretender.resolve(request);
-        }, delay);
-      }
-    }
-  },
-  resolve: function resolve(request) {
-    for (var i = 0, len = this.requestReferences.length; i < len; i++) {
-      var res = this.requestReferences[i];
-      if (res.request === request) {
-        res.callback();
-        this.requestReferences.splice(i, 1);
-        break;
-      }
-    }
-  },
-  requiresManualResolution: function(verb, path) {
-    var handler = this._handlerFor(verb.toUpperCase(), path, {});
-    if (!handler) { return false; }
-
-    var async = handler.handler.async;
-    return typeof async === 'function' ? async() === true : async === true;
-  },
-  prepareBody: function(body) { return body; },
-  prepareHeaders: function(headers) { return headers; },
-  handledRequest: function(/* verb, path, request */) { /* no-op */},
-  passthroughRequest: function(/* verb, path, request */) { /* no-op */},
-  unhandledRequest: function(verb, path/*, request */) {
-    throw new Error('Pretender intercepted ' + verb + ' ' +
-      path + ' but no handler was defined for this type of request');
-  },
-  erroredRequest: function(verb, path, request, error) {
-    error.message = 'Pretender intercepted ' + verb + ' ' +
-      path + ' but encountered an error: ' + error.message;
-    throw error;
-  },
-  _handlerFor: function(verb, url, request) {
-    var registry = this.hosts.forURL(url)[verb];
-    var matches = registry.recognize(parseURL(url).fullpath);
-
-    var match = matches ? matches[0] : null;
-    if (match) {
-      request.params = match.params;
-      request.queryParams = matches.queryParams;
-    }
-
-    return match;
-  },
-  shutdown: function shutdown() {
-    self.XMLHttpRequest = this._nativeXMLHttpRequest;
-
-    // 'stop' the server
-    this.running = false;
-  }
-};
-
-Pretender.parseURL = parseURL;
-Pretender.Hosts = Hosts;
-Pretender.Registry = Registry;
-
-if (typeof module === 'object') {
-  module.exports = Pretender;
-} else if (typeof define !== 'undefined') {
-  define('pretender', [], function() {
-    return Pretender;
-  });
-}
-self.Pretender = Pretender;
-}(self));
-
-}).call(this,require('_process'))
-},{"_process":2,"fake-xml-http-request":4,"route-recognizer":5}],7:[function(require,module,exports){
-'use strict';
-var strictUriEncode = require('strict-uri-encode');
-
-exports.extract = function (str) {
-	return str.split('?')[1] || '';
-};
-
-exports.parse = function (str) {
-	if (typeof str !== 'string') {
-		return {};
-	}
-
-	str = str.trim().replace(/^(\?|#|&)/, '');
-
-	if (!str) {
-		return {};
-	}
-
-	return str.split('&').reduce(function (ret, param) {
-		var parts = param.replace(/\+/g, ' ').split('=');
-		// Firefox (pre 40) decodes `%3D` to `=`
-		// https://github.com/sindresorhus/query-string/pull/37
-		var key = parts.shift();
-		var val = parts.length > 0 ? parts.join('=') : undefined;
-
-		key = decodeURIComponent(key);
-
-		// missing `=` should be `null`:
-		// http://w3.org/TR/2012/WD-url-20120524/#collect-url-parameters
-		val = val === undefined ? null : decodeURIComponent(val);
-
-		if (!ret.hasOwnProperty(key)) {
-			ret[key] = val;
-		} else if (Array.isArray(ret[key])) {
-			ret[key].push(val);
-		} else {
-			ret[key] = [ret[key], val];
-		}
-
-		return ret;
-	}, {});
-};
-
-exports.stringify = function (obj) {
-	return obj ? Object.keys(obj).sort().map(function (key) {
-		var val = obj[key];
-
-		if (Array.isArray(val)) {
-			return val.sort().map(function (val2) {
-				return strictUriEncode(key) + '=' + strictUriEncode(val2);
-			}).join('&');
-		}
-
-		return strictUriEncode(key) + '=' + strictUriEncode(val);
-	}).filter(function (x) {
-		return x.length > 0;
-	}).join('&') : '';
-};
-
-},{"strict-uri-encode":8}],8:[function(require,module,exports){
-'use strict';
-module.exports = function (str) {
-	return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
-		return '%' + c.charCodeAt(0).toString(16);
-	});
-};
-
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 /**
@@ -14319,14 +14113,14 @@ var stubbyFactory = function(deps) {
             }
           );
 
-          console.log(
+          throw new Error(
+            'Stubby: no stub found for this request. ' +
             'You can stub this request with:\n\n' +
             'window.stubby.stub(' +
             JSON.stringify(result, null, 2) +
             ')\n' +
-            '.respondWith(' + status + ', ' + JSON.stringify(data, null, 2) + ');\n\n'
+            '.respondWith(' + status + ', ' + JSON.stringify(data, null, 2) + ');'
           );
-          throw new Error('Stubby: no stub found for this request.)');
         }
       });
 
