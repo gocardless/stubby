@@ -238,14 +238,14 @@ var stubbyFactory = function(deps) {
             }
           );
 
-          console.log(
+          throw new Error(
+            'Stubby: no stub found for this request. ' +
             'You can stub this request with:\n\n' +
             'window.stubby.stub(' +
             JSON.stringify(result, null, 2) +
             ')\n' +
-            '.respondWith(' + status + ', ' + JSON.stringify(data, null, 2) + ');\n\n'
+            '.respondWith(' + status + ', ' + JSON.stringify(data, null, 2) + ');'
           );
-          throw new Error('Stubby: no stub found for this request.)');
         }
       });
 
