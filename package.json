@@ -1,5 +1,5 @@
 {
-  "name": "stubby",
+  "name": "@gocardless/stubby",
   "description": "AJAX Testing Stub Library",
   "version": "0.0.7",
   "main": "index.js",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gocardless/stubby.git"
+    "url": "git+https://github.com/gocardless/stubby.git"
   },
   "keywords": [
     "stubby",
@@ -23,7 +23,18 @@
     "testing",
     "mocking"
   ],
-  "author": "Iain Nash",
+  "contributors": [{
+    "name": "Iain Nash",
+  }, {
+    "name": "Jack Franklin",
+    "email": "jack@jackfranklin.net"
+  }, {
+    "name": "Walter Carvalho",
+    "email": "waltervascarvalho@gmail.com"
+  }, {
+    "name": "Philip Harrison",
+    "email": "philip@mailharrison.com"
+  }],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/gocardless/stubby/issues"
