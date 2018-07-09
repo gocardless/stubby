@@ -74,7 +74,6 @@ var stubbyFactory = function(deps) {
   Stubby.prototype.stubMatchesRequest = function(stub, request) {
     var queryParams = request.queryParams;
     var method = request.method;
-    var data = request.data;
 
     this.emit('setup', stub, request);
 
@@ -102,9 +101,22 @@ var stubbyFactory = function(deps) {
 
     var dataRequestMatch;
 
+    var stubbedRequestData = stub.request.data;
+    var requestData = request.data;
+
     // if no stub data was given, we just say that we matched
-    if (!_.isEmpty(stub.request.data)) {
-      dataRequestMatch = _.isEqual(stub.request.data, data);
+    if (!_.isEmpty(stubbedRequestData)) {
+      // if the data is a string we assume it is JSON string
+      if (typeof requestData === 'string') {
+        try {
+          var parsedRequestData = JSON.parse(requestData);
+          dataRequestMatch = _.isEqual(stubbedRequestData, parsedRequestData);
+        } catch (e) {
+          dataRequestMatch = _.isEqual(stubbedRequestData, requestData);
+        }
+      } else {
+        dataRequestMatch = _.isEqual(stubbedRequestData, requestData);
+      }
     } else {
       dataRequestMatch = true;
     }
@@ -317,4 +329,3 @@ if (typeof module === 'undefined') {
 } else {
   module.exports = stubbyFactory;
 }
-

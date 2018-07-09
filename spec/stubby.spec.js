@@ -6,7 +6,7 @@ describe('create stubby', () => {
   });
 
   describe('stubbing a URL', () => {
-    it('lets a URL be stubbed', (done) => {
+    it('lets a URL be stubbed', done => {
       stubby
         .stub({
           url: '/foo'
@@ -20,7 +20,7 @@ describe('create stubby', () => {
       });
     });
 
-    it('differentiates on query params', (done) => {
+    it('differentiates on query params', done => {
       stubby
         .stub({
           url: '/foo?a=1'
@@ -52,7 +52,7 @@ describe('create stubby', () => {
       }).toThrowError();
     });
 
-    it('works with query params in both orders', (done) => {
+    it('works with query params in both orders', done => {
       stubby
         .stub({
           url: '/foo?a=1&b=2'
@@ -71,7 +71,7 @@ describe('create stubby', () => {
       });
     });
 
-    it('lets you define query params', (done) => {
+    it('lets you define query params', done => {
       stubby
         .stub({
           url: '/foo',
@@ -85,7 +85,7 @@ describe('create stubby', () => {
       });
     });
 
-    it('lets you match on headers', (done) => {
+    it('lets you match on headers', done => {
       stubby
         .stub({
           url: '/foo',
@@ -109,7 +109,7 @@ describe('create stubby', () => {
       );
     });
 
-    it('lets you stub response headers', (done) => {
+    it('lets you stub response headers', done => {
       stubby
         .stub({
           url: '/foo'
@@ -133,7 +133,7 @@ describe('create stubby', () => {
       );
     });
 
-    it('lets you match on regex headers', (done) => {
+    it('lets you match on regex headers', done => {
       stubby
         .stub({
           url: '/foo',
@@ -155,7 +155,7 @@ describe('create stubby', () => {
       );
     });
 
-    it('ignores headers in the request not present in the stub', (done) => {
+    it('ignores headers in the request not present in the stub', done => {
       stubby
         .stub({
           url: '/foo',
@@ -178,7 +178,7 @@ describe('create stubby', () => {
       );
     });
 
-    it('matches on regex query param values', (done) => {
+    it('matches on regex query param values', done => {
       stubby
         .stub({
           url: '/foo',
@@ -192,7 +192,7 @@ describe('create stubby', () => {
       });
     });
 
-    it('all params are matched', (done) => {
+    it('all params are matched', done => {
       stubby
         .stub({
           url: '/foo',
@@ -242,7 +242,7 @@ describe('create stubby', () => {
         expect(spies.setup).not.toHaveBeenCalled();
         expect(spies.request).not.toHaveBeenCalled();
       });
-      it('makes one request to setup and one request to request when set', (done) => {
+      it('makes one request to setup and one request to request when set', done => {
         expect(spies.routesetup).toHaveBeenCalled();
         global.get('/test', () => {
           expect(spies.setup).toHaveBeenCalled();
@@ -262,7 +262,7 @@ describe('create stubby', () => {
       }).toThrowError();
     });
 
-    it('doesn\'t error when all stubs are satisfied', (done) => {
+    it('doesn\'t error when all stubs are satisfied', done => {
       stubby.stub({ url: '/foo' }).respondWith(200, {});
       stubby.stub({ url: '/bar' }).respondWith(200, {});
 
@@ -289,7 +289,7 @@ describe('create stubby', () => {
       }).toThrowError('Stub(s) were not called: GET /foo/, POST /foo/');
     });
 
-    it('can deal with multiple stubs', (done) => {
+    it('can deal with multiple stubs', done => {
       stubby.stub({ url: '/foo' }).respondWith(200, {});
       stubby.stub({ url: '/bar' }).respondWith(200, {});
 
@@ -302,7 +302,7 @@ describe('create stubby', () => {
       });
     });
 
-    it('can deal with query params', (done) => {
+    it('can deal with query params', done => {
       stubby.stub({ url: '/foo', params: { a: 1 } }).respondWith(200, {});
       stubby.stub({ url: '/foo', params: { b: 1 } }).respondWith(200, {});
 
@@ -317,7 +317,7 @@ describe('create stubby', () => {
   });
 
   describe('stubbing a POST url', () => {
-    it('stubs a post URL', (done) => {
+    it('stubs a post URL', done => {
       stubby
         .stub({
           url: '/foo',
@@ -331,11 +331,60 @@ describe('create stubby', () => {
       });
     });
 
-    it('can match on POST data', (done) => {
+    describe('when stubbing POST data', () => {
+      it('can match stub data to POST data', done => {
+        stubby
+          .stub({
+            url: '/foo',
+            data: { b: 2 },
+            method: 'POST'
+          })
+          .respondWith(200, { a: 1 });
+
+        global.post({ url: '/foo', data: { b: 2 } }, function(xhr) {
+          expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
+          done();
+        });
+      });
+
+      describe('when POST data is stringified object', () => {
+        it('can match on POST body', done => {
+          stubby
+            .stub({
+              url: '/foo',
+              data: { b: 2 },
+              method: 'POST'
+            })
+            .respondWith(200, { a: 1 });
+
+          global.post({ url: '/foo', data: JSON.stringify({ b: 2 }) }, function(xhr) {
+            expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
+            done();
+          });
+        });
+      });
+
+      describe('when POST data is a string', () => {
+        it('should throw an error as it can not match', () => {
+          stubby
+            .stub({
+              url: '/foo',
+              data: JSON.stringify({ b: 2 }),
+              method: 'POST'
+            })
+            .respondWith(200, { a: 1 });
+
+          expect(() => {
+            global.post({ url: '/foo', data: { b: 2 } }, () => {});
+          }).toThrow();
+        });
+      });
+    });
+
+    it('matches a stub if the stub has no data but the request does', done => {
       stubby
         .stub({
           url: '/foo',
-          data: { b: 2 },
           method: 'POST'
         })
         .respondWith(200, { a: 1 });
@@ -346,21 +395,7 @@ describe('create stubby', () => {
       });
     });
 
-    it('matches a stub if the stub has no data but the request does', (done) => {
-      stubby
-        .stub({
-          url: '/foo',
-          method: 'POST'
-        })
-        .respondWith(200, { a: 1 });
-
-      global.post({ url: '/foo', data: { b: 2 } }, function(xhr) {
-        expect(JSON.parse(xhr.responseText)).toEqual({ a: 1 });
-        done();
-      });
-    });
-
-    it('can differentiate between POST and PUT data', (done) => {
+    it('can differentiate between POST and PUT data', done => {
       stubby
         .stub({
           url: '/foobar',
@@ -381,7 +416,7 @@ describe('create stubby', () => {
       });
     });
 
-    it('can differentiate between a GET and PUT', (done) => {
+    it('can differentiate between a GET and PUT', done => {
       stubby
         .stub({
           url: '/foobar',
@@ -411,7 +446,7 @@ describe('create stubby', () => {
       }).toThrow();
     });
 
-    it('lets you override if you pass the overrideStub param', (done) => {
+    it('lets you override if you pass the overrideStub param', done => {
       stubby.stub({ url: '/foo' }).respondWith(200, { first: true });
 
       expect(() => {
