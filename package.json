@@ -7,7 +7,7 @@
     "example": "example"
   },
   "scripts": {
-    "test": "./script/test",
+    "test": "jest",
     "build": "./script/build",
     "demo": "./script/demo",
     "lint": "eslint ."
@@ -23,24 +23,31 @@
     "testing",
     "mocking"
   ],
-  "contributors": [{
-    "name": "Iain Nash"
-  }, {
-    "name": "Jack Franklin",
-    "email": "jack@jackfranklin.net"
-  }, {
-    "name": "Walter Carvalho",
-    "email": "waltervascarvalho@gmail.com"
-  }, {
-    "name": "Philip Harrison",
-    "email": "philip@mailharrison.com"
-  }],
+  "contributors": [
+    {
+      "name": "Iain Nash"
+    },
+    {
+      "name": "Jack Franklin",
+      "email": "jack@jackfranklin.net"
+    },
+    {
+      "name": "Walter Carvalho",
+      "email": "waltervascarvalho@gmail.com"
+    },
+    {
+      "name": "Philip Harrison",
+      "email": "philip@mailharrison.com"
+    }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/gocardless/stubby/issues"
   },
   "homepage": "https://github.com/gocardless/stubby",
   "dependencies": {
+    "fake-xml-http-request": "^2.0.0",
+    "jest": "^23.4.0",
     "lodash": "^3.10.1",
     "pretender": "^0.10.1",
     "query-string": "^2.4.2",
@@ -55,5 +62,9 @@
     "jasmine": "^2.3.1",
     "phantomjs": "^1.9.18",
     "uglifyjs": "^2.4.10"
+  },
+  "jest": {
+    "verbose": true,
+    "setupFiles": ["<rootDir>/setupTests.js"]
   }
 }
