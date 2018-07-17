@@ -3,7 +3,7 @@ dependencies:
     - bower_components
 machine:
   node:
-    version: 9.11.2
+    version: 10.6.0
 test:
   pre:
     - npm install -g bower
