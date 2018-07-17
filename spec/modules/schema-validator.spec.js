@@ -23,7 +23,7 @@ describe('uses modules to validate json schema', () => {
     it('can send a valid customers list request', (done) => {
       stubby.stub({
         url: '/customers',
-        queryParams: {
+        params: {
           limit: 11
         },
         method: 'GET'
