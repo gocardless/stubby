@@ -1,24 +1,31 @@
-'use strict';
+const schema = require('./test-schema.json');
 
-// [!] URLs are relative to the test runner html file, not this javascript file.
-var schemaStr = window.get({url: './modules/test-schema.json', async: false}).responseText;
-var schema = JSON.parse(schemaStr);
-
-describe('uses modules to validate json schema', function() {
+describe('uses modules to validate json schema', () => {
   var stubby;
-  beforeEach(function() {
-    stubby = new window.Stubby();
+  beforeEach(() => {
+    const xhrMockClass = () => ({
+      open: jest.fn(),
+      send: jest.fn(),
+      setRequestHeader: jest.fn()
+    });
 
-    var validator = new window.StubbySchemaValidator();
+    global.XMLHttpRequest = jest.fn().mockImplementation(xhrMockClass);
+
+    stubby = new global.Stubby();
+
+    var validator = new global.StubbySchemaValidator();
     validator.addSchema('/', schema);
     stubby.addModule(validator);
     return stubby;
   });
 
-  describe('stubbing out validated api queries', function() {
-    it('can send a valid customers list request', function(done) {
+  describe('stubbing out validated api queries', () => {
+    it('can send a valid customers list request', (done) => {
       stubby.stub({
-        url: '/customers?limit=11',
+        url: '/customers',
+        params: {
+          limit: 11
+        },
         method: 'GET'
       }).respondWith(200, { meta: {}, customers: [] });
 
@@ -28,8 +35,8 @@ describe('uses modules to validate json schema', function() {
       });
     });
 
-    it('can match on GET data', function() {
-      expect(function() {
+    it('can match on GET data', () => {
+      expect(() => {
         stubby.stub({
           url: '/payments?undefined=blah&fubar',
           method: 'GET'
@@ -37,8 +44,8 @@ describe('uses modules to validate json schema', function() {
       }).toThrowError();
     });
 
-    it('throws with an invalid request', function() {
-      expect(function() {
+    it('throws with an invalid request', () => {
+      expect(() => {
         stubby.stub({
           url: '/payments?age=1,2,3,4',
           method: 'GET'
@@ -46,24 +53,24 @@ describe('uses modules to validate json schema', function() {
       }).toThrowError();
     });
 
-    it('throws an invalid post request', function() {
+    it('throws an invalid post request', () => {
       stubby.stub({
         url: '/customers',
         method: 'POST'
       }).respondWith(422, {});
 
-      expect(function() {
+      expect(() => {
         window.post({
           url: '/customers', data: { invalid: 'data' }
-        }, function() {
+        }, () => {
           // Should throw.
         });
       }).toThrowError();
     });
   });
 
-  describe('stubbing out wildcard routed urls', function() {
-    it('can validate a wildcard url', function(done) {
+  describe('stubbing out wildcard routed urls', () => {
+    it('can validate a wildcard url', (done) => {
       stubby.stub({
         url: '/customers/234235',
         method: 'GET'
@@ -75,8 +82,8 @@ describe('uses modules to validate json schema', function() {
       });
     });
 
-    it('fails when not given a valid wildcard url', function() {
-      expect(function() {
+    it('fails when not given a valid wildcard url', () => {
+      expect(() => {
         stubby.stub({
           url: '/customers/asdf/asfd/a//a',
           method: 'GET'
@@ -84,8 +91,8 @@ describe('uses modules to validate json schema', function() {
       }).toThrow();
     });
 
-    it('fails when parameters are given to a parameterless request', function() {
-      expect(function() {
+    it('fails when parameters are given to a parameterless request', () => {
+      expect(() => {
         stubby.stub({
           url: '/customers/123?param=fail',
           method: 'GET'

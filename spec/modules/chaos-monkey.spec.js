@@ -1,28 +1,34 @@
-'use strict';
-
-describe('uses chaos money to randomise response status codes', function() {
+describe('uses chaos money to randomise response status codes', () => {
   var stubby;
 
-  beforeEach(function() {
-    stubby = new window.Stubby();
-    stubby.addModule(new window.StubbyChaosMonkey());
+  beforeEach(() => {
+    const xhrMockClass = () => ({
+      open: jest.fn(),
+      send: jest.fn(),
+      setRequestHeader: jest.fn()
+    });
+
+    global.XMLHttpRequest = jest.fn().mockImplementation(xhrMockClass);
+
+    stubby = new global.Stubby();
+    stubby.addModule(new global.StubbyChaosMonkey());
   });
 
-  describe('stubbing out normal requests', function() {
-    it('will ignore requests with no chaos option', function(done) {
+  describe('stubbing out normal requests', () => {
+    it('will ignore requests with no chaos option', (done) => {
       stubby.stub({
         url: '/test'
       }).respondWith(200, { ok: true });
 
-      window.get('/test', function(xhr) {
+      window.get('/test', (xhr) => {
         expect(xhr.status).toEqual(200);
         expect(JSON.parse(xhr.responseText)).toEqual({ ok: true });
         done();
       });
     });
 
-    it('will explode if the response port is not 43', function() {
-      expect(function() {
+    it('will explode if the response port is not 43', () => {
+      expect(() => {
         stubby.stub({
           url: '/test',
           options: {
@@ -34,8 +40,8 @@ describe('uses chaos money to randomise response status codes', function() {
 
   });
 
-  describe('stubbing out chaotic requests', function() {
-    it('will give a random response within a status range for a proper chaotic request', function(done) {
+  describe('stubbing out chaotic requests', () => {
+    it('will give a random response within a status range for a proper chaotic request', (done) => {
       stubby.stub({
         url: '/test',
         options: {
@@ -43,14 +49,14 @@ describe('uses chaos money to randomise response status codes', function() {
         }
       }).respondWith(43, { ok: false });
 
-      var testResponseCheck = function(xhr) {
-        expect(xhr.status).toBeGreaterThan(100-1);
-        expect(xhr.status).toBeLessThan(600);
-        expect(JSON.parse(xhr.responseText)).toEqual({ ok: false });
-      };
-
       for (var i = 0; i < 100; i++) {
-        window.get('/test', testResponseCheck);
+
+        window.get('/test', (xhr) => {
+          expect(xhr.status).toBeGreaterThan(99);
+          expect(xhr.status).toBeLessThan(600);
+          expect(JSON.parse(xhr.responseText)).toEqual({ ok: false });
+        });
+
         if (i === 99) {
           setTimeout(done, 1);
         }
