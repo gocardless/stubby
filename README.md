@@ -1,3 +1,6 @@
+# This library is legacy and will be modified to help us move away from it, and will not be maintained with the plan to deprecate this library later this year (2018).
+## If you require a stubbing library see: [Pretender](https://github.com/trek/pretender)
+
 # Stubby
 
 ### AJAX Testing Stub Library
