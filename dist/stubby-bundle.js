@@ -10,7 +10,7 @@ var Stubby = require('./stubby')({
 module.exports = Stubby;
 
 
-},{"./stubby":8,"lodash":2,"pretender":4,"query-string":5}],2:[function(require,module,exports){
+},{"./stubby":9,"lodash":2,"pretender":4,"query-string":6}],2:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -12502,7 +12502,7 @@ module.exports = Stubby;
       var listener = xhr["on" + eventName];
 
       if (listener && typeof listener == "function") {
-        listener(event);
+        listener.call(event.target, event);
       }
     });
   }
@@ -12640,7 +12640,15 @@ module.exports = Stubby;
       verifyState(this);
 
       if (!/^(get|head)$/i.test(this.method)) {
-        if (!this.requestHeaders["Content-Type"]) {
+        var hasContentTypeHeader = false
+
+        Object.keys(this.requestHeaders).forEach(function (key) {
+          if (key.toLowerCase() === 'content-type') {
+            hasContentTypeHeader = true;
+          }
+        });
+
+        if (!hasContentTypeHeader && !(data || '').toString().match('FormData')) {
           this.requestHeaders["Content-Type"] = "text/plain;charset=UTF-8";
         }
 
@@ -12723,6 +12731,16 @@ module.exports = Stubby;
     },
 
     /*
+     Duplicates the behavior of native XMLHttpRequest's overrideMimeType function
+     */
+    overrideMimeType: function overrideMimeType(mimeType) {
+      if (typeof mimeType === "string") {
+        this.forceMimeType = mimeType.toLowerCase();
+      }
+    },
+
+
+    /*
       Places a FakeXMLHttpRequest object into the passed
       state.
     */
@@ -12730,7 +12748,7 @@ module.exports = Stubby;
       this.readyState = state;
 
       if (typeof this.onreadystatechange == "function") {
-        this.onreadystatechange();
+        this.onreadystatechange(new _Event("readystatechange"));
       }
 
       this.dispatchEvent(new _Event("readystatechange"));
@@ -12753,6 +12771,10 @@ module.exports = Stubby;
         if (headers.hasOwnProperty(header)) {
             this.responseHeaders[header] = headers[header];
         }
+      }
+
+      if (this.forceMimeType) {
+        this.responseHeaders['Content-Type'] = this.forceMimeType;
       }
 
       if (this.async) {
@@ -12862,26 +12884,95 @@ module.exports = Stubby;
 
 }));
 },{}],4:[function(require,module,exports){
-(function (__dirname){
-(function(window){
+(function (process){
+(function(self) {
+'use strict';
 
-var isNode = typeof __dirname !== 'undefined';
-var RouteRecognizer = isNode ? require('route-recognizer') : window.RouteRecognizer;
-var FakeXMLHttpRequest = isNode ? require('fake-xml-http-request') : window.FakeXMLHttpRequest;
-var slice = [].slice;
+var appearsBrowserified = typeof self !== 'undefined' &&
+                          typeof process !== 'undefined' &&
+                          Object.prototype.toString.call(process) === '[object Object]';
 
-function Pretender(/* routeMap1, routeMap2, ...*/){
-  maps = slice.call(arguments);
-  // Herein we keep track of RouteRecognizer instances
-  // keyed by HTTP method. Feel free to add more as needed.
-  this.registry = {
+var RouteRecognizer = appearsBrowserified ? require('route-recognizer') : self.RouteRecognizer;
+var FakeXMLHttpRequest = appearsBrowserified ? require('fake-xml-http-request') : self.FakeXMLHttpRequest;
+
+/**
+ * parseURL - decompose a URL into its parts
+ * @param  {String} url a URL
+ * @return {Object} parts of the URL, including the following
+ *
+ * 'https://www.yahoo.com:1234/mypage?test=yes#abc'
+ *
+ * {
+ *   host: 'www.yahoo.com:1234',
+ *   protocol: 'https:',
+ *   search: '?test=yes',
+ *   hash: '#abc',
+ *   href: 'https://www.yahoo.com:1234/mypage?test=yes#abc',
+ *   pathname: '/mypage',
+ *   fullpath: '/mypage?test=yes'
+ * }
+ */
+function parseURL(url) {
+  // TODO: something for when document isn't present... #yolo
+  var anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.fullpath = anchor.pathname + (anchor.search || '') + (anchor.hash || '');
+  return anchor;
+}
+
+
+/**
+ * Registry
+ *
+ * A registry is a map of HTTP verbs to route recognizers.
+ */
+
+function Registry(/* host */) {
+  this.verbs = {
     GET: new RouteRecognizer(),
     PUT: new RouteRecognizer(),
     POST: new RouteRecognizer(),
     DELETE: new RouteRecognizer(),
     PATCH: new RouteRecognizer(),
-    HEAD: new RouteRecognizer()
+    HEAD: new RouteRecognizer(),
+    OPTIONS: new RouteRecognizer()
   };
+}
+
+/**
+ * Hosts
+ *
+ * a map of hosts to Registries, ultimately allowing
+ * a per-host-and-port, per HTTP verb lookup of RouteRecognizers
+ */
+function Hosts() {
+  this._registries = {};
+}
+
+/**
+ * Hosts#forURL - retrieve a map of HTTP verbs to RouteRecognizers
+ *                for a given URL
+ *
+ * @param  {String} url a URL
+ * @return {Registry}   a map of HTTP verbs to RouteRecognizers
+ *                      corresponding to the provided URL's
+ *                      hostname and port
+ */
+Hosts.prototype.forURL = function(url) {
+  var host = parseURL(url).host;
+  var registry = this._registries[host];
+
+  if (registry === undefined) {
+    registry = (this._registries[host] = new Registry(host));
+  }
+
+  return registry.verbs;
+};
+
+function Pretender(/* routeMap1, routeMap2, ...*/) {
+  // Herein we keep track of RouteRecognizer instances
+  // keyed by HTTP method. Feel free to add more as needed.
+  this.hosts = new Hosts();
 
   this.handlers = [];
   this.handledRequests = [];
@@ -12891,113 +12982,138 @@ function Pretender(/* routeMap1, routeMap2, ...*/){
 
   // reference the native XMLHttpRequest object so
   // it can be restored later
-  this._nativeXMLHttpRequest = window.XMLHttpRequest;
+  this._nativeXMLHttpRequest = self.XMLHttpRequest;
 
   // capture xhr requests, channeling them into
   // the route map.
-  window.XMLHttpRequest = interceptor(this);
+  self.XMLHttpRequest = interceptor(this);
 
-  // "start" the server
+  // 'start' the server
   this.running = true;
 
   // trigger the route map DSL.
-  for(i=0; i < arguments.length; i++){
+  for (var i = 0; i < arguments.length; i++) {
     this.map(arguments[i]);
   }
 }
 
 function interceptor(pretender) {
-  function FakeRequest(){
+  function FakeRequest() {
     // super()
     FakeXMLHttpRequest.call(this);
   }
   // extend
   var proto = new FakeXMLHttpRequest();
-  proto.send = function send(){
+  proto.send = function send() {
     if (!pretender.running) {
-      throw new Error('You shut down a Pretender instance while there was a pending request. '+
-            'That request just tried to complete. Check to see if you accidentally shut down '+
+      throw new Error('You shut down a Pretender instance while there was a pending request. ' +
+            'That request just tried to complete. Check to see if you accidentally shut down ' +
             'a pretender earlier than you intended to');
     }
 
     FakeXMLHttpRequest.prototype.send.apply(this, arguments);
     if (!pretender.checkPassthrough(this)) {
       pretender.handleRequest(this);
-    }
-    else {
+    } else {
       var xhr = createPassthrough(this);
       xhr.send.apply(xhr, arguments);
     }
   };
 
   // passthrough handling
-  var evts = ['load', 'error', 'timeout', 'progress', 'abort', 'readystatechange'];
+  var evts = ['error', 'timeout', 'abort'];
   var lifecycleProps = ['readyState', 'responseText', 'responseXML', 'status', 'statusText'];
   function createPassthrough(fakeXHR) {
     var xhr = fakeXHR._passthroughRequest = new pretender._nativeXMLHttpRequest();
+
+    // Use onload instead of onreadystatechange if the browser supports it
+    if ('onload' in xhr) {
+      evts.push('load');
+    } else {
+      evts.push('readystatechange');
+    }
+
+    // add progress event for async calls
+    if (fakeXHR.async) {
+      evts.push('progress');
+    }
+
+    /*jshint -W083 */
+    // jscs:disable requireCurlyBraces
     // listen to all events to update lifecycle properties
-    for (var i = 0; i < evts.length; i++) (function(evt) {
-      xhr['on' + evt] = function(e) {
-        // update lifecycle props on each event
-        for (var i = 0; i < lifecycleProps.length; i++) {
-          var prop = lifecycleProps[i];
-          if (xhr[prop]) {
-            fakeXHR[prop] = xhr[prop];
+    for (var i = 0; i < evts.length; i++) {
+      (function(evt) {
+        xhr['on' + evt] = function(e) {
+          // update lifecycle props on each event
+          for (var i = 0; i < lifecycleProps.length; i++) {
+            var prop = lifecycleProps[i];
+            if (xhr[prop]) {
+              fakeXHR[prop] = xhr[prop];
+            }
           }
-        }
-        // fire fake events where applicable
-        fakeXHR.dispatchEvent(evt, e);
-        if (fakeXHR['on' + evt]) {
-          fakeXHR['on' + evt](e);
-        }
-      };
-    })(evts[i]);
+          // fire fake events where applicable
+          fakeXHR.dispatchEvent(e);
+          if (fakeXHR['on' + evt]) {
+            fakeXHR['on' + evt](e);
+          }
+        };
+      })(evts[i]);
+    }
+    /*jshint +W083 */
+    // jscs:enable requireCurlyBraces
     xhr.open(fakeXHR.method, fakeXHR.url, fakeXHR.async, fakeXHR.username, fakeXHR.password);
-    xhr.timeout = fakeXHR.timeout;
-    xhr.withCredentials = fakeXHR.withCredentials;
+    if (fakeXHR.async) {
+      xhr.timeout = fakeXHR.timeout;
+      xhr.withCredentials = fakeXHR.withCredentials;
+    }
     for (var h in fakeXHR.requestHeaders) {
       xhr.setRequestHeader(h, fakeXHR.requestHeaders[h]);
     }
     return xhr;
   }
-  proto._passthroughCheck = function(method, arguments) {
+
+  proto._passthroughCheck = function(method, args) {
     if (this._passthroughRequest) {
-      return this._passthroughRequest[method].apply(this._passthroughRequest, arguments);
+      return this._passthroughRequest[method].apply(this._passthroughRequest, args);
     }
-    return FakeXMLHttpRequest.prototype[method].apply(this, arguments);
-  }
-  proto.abort = function abort(){
+    return FakeXMLHttpRequest.prototype[method].apply(this, args);
+  };
+
+  proto.abort = function abort() {
     return this._passthroughCheck('abort', arguments);
-  }
-  proto.getResponseHeader = function getResponseHeader(){
+  };
+
+  proto.getResponseHeader = function getResponseHeader() {
     return this._passthroughCheck('getResponseHeader', arguments);
-  }
-  proto.getAllResponseHeaders = function getAllResponseHeaders(){
+  };
+
+  proto.getAllResponseHeaders = function getAllResponseHeaders() {
     return this._passthroughCheck('getAllResponseHeaders', arguments);
-  }
+  };
 
   FakeRequest.prototype = proto;
   return FakeRequest;
 }
 
-function verbify(verb){
-  return function(path, handler, async){
+function verbify(verb) {
+  return function(path, handler, async) {
     this.register(verb, path, handler, async);
   };
 }
 
-function throwIfURLDetected(url){
-  var HTTP_REGEXP = /^https?/;
-  var message;
+function scheduleProgressEvent(request, startTime, totalTime) {
+  setTimeout(function() {
+    if (!request.aborted && !request.status) {
+      var ellapsedTime = new Date().getTime() - startTime.getTime();
+      request.upload._progress(true, ellapsedTime, totalTime);
+      request._progress(true, ellapsedTime, totalTime);
+      scheduleProgressEvent(request, startTime, totalTime);
+    }
+  }, 50);
+}
 
-  if(HTTP_REGEXP.test(url)) {
-    var parser = window.document.createElement('a');
-    parser.href = url;
-
-    message = "Pretender will not respond to requests for URLs. It is not possible to accurately simluate the browser's CSP. "+
-              "Remove the " + parser.protocol +"//"+ parser.hostname +" from " + url + " and try again";
-    throw new Error(message)
-  }
+function isArray(array) {
+  return Object.prototype.toString.call(array) === '[object Array]';
 }
 
 var PASSTHROUGH = {};
@@ -13009,33 +13125,37 @@ Pretender.prototype = {
   'delete': verbify('DELETE'),
   patch: verbify('PATCH'),
   head: verbify('HEAD'),
-  map: function(maps){
+  map: function(maps) {
     maps.call(this);
   },
-  register: function register(verb, path, handler, async){
+  register: function register(verb, url, handler, async) {
     if (!handler) {
-      throw new Error("The function you tried passing to Pretender to handle " + verb + " " + path + " is undefined or missing.");
+      throw new Error('The function you tried passing to Pretender to handle ' +
+        verb + ' ' + url + ' is undefined or missing.');
     }
 
     handler.numberOfCalls = 0;
     handler.async = async;
     this.handlers.push(handler);
 
-    var registry = this.registry[verb];
-    registry.add([{path: path, handler: handler}]);
+    var registry = this.hosts.forURL(url)[verb];
+
+    registry.add([{
+      path: parseURL(url).fullpath,
+      handler: handler
+    }]);
   },
   passthrough: PASSTHROUGH,
-  checkPassthrough: function(request) {
+  checkPassthrough: function checkPassthrough(request) {
     var verb = request.method.toUpperCase();
-    var path = request.url;
 
-    throwIfURLDetected(path);
+    var path = parseURL(request.url).fullpath;
 
     verb = verb.toUpperCase();
 
-    var recognized = this.registry[verb].recognize(path);
+    var recognized = this.hosts.forURL(request.url)[verb].recognize(path);
     var match = recognized && recognized[0];
-    if (match && match.handler == PASSTHROUGH) {
+    if (match && match.handler === PASSTHROUGH) {
       this.passthroughRequests.push(request);
       this.passthroughRequest(verb, path, request);
       return true;
@@ -13043,7 +13163,7 @@ Pretender.prototype = {
 
     return false;
   },
-  handleRequest: function handleRequest(request){
+  handleRequest: function handleRequest(request) {
     var verb = request.method.toUpperCase();
     var path = request.url;
 
@@ -13055,8 +13175,13 @@ Pretender.prototype = {
       this.handledRequests.push(request);
 
       try {
-        var statusHeadersAndBody = handler.handler(request),
-            status = statusHeadersAndBody[0],
+        var statusHeadersAndBody = handler.handler(request);
+        if (!isArray(statusHeadersAndBody)) {
+          var note = 'Remember to `return [status, headers, body];` in your route handler.';
+          throw new Error('Nothing returned by handler for ' + path + '. ' + note);
+        }
+
+        var status = statusHeadersAndBody[0],
             headers = this.prepareHeaders(statusHeadersAndBody[1]),
             body = this.prepareBody(statusHeadersAndBody[2]),
             pretender = this;
@@ -13075,9 +13200,10 @@ Pretender.prototype = {
     }
   },
   handleResponse: function handleResponse(request, strategy, callback) {
-    strategy = typeof strategy === 'function' ? strategy() : strategy;
+    var delay = typeof strategy === 'function' ? strategy() : strategy;
+    delay = typeof delay === 'boolean' || typeof delay === 'number' ? delay : 0;
 
-    if (strategy === false) {
+    if (delay === false) {
       callback();
     } else {
       var pretender = this;
@@ -13086,15 +13212,16 @@ Pretender.prototype = {
         callback: callback
       });
 
-      if (strategy !== true) {
+      if (delay !== true) {
+        scheduleProgressEvent(request, new Date(), delay);
         setTimeout(function() {
           pretender.resolve(request);
-        }, typeof strategy === 'number' ? strategy : 0);
+        }, delay);
       }
     }
   },
   resolve: function resolve(request) {
-    for(var i = 0, len = this.requestReferences.length; i < len; i++) {
+    for (var i = 0, len = this.requestReferences.length; i < len; i++) {
       var res = this.requestReferences[i];
       if (res.request === request) {
         res.callback();
@@ -13112,18 +13239,20 @@ Pretender.prototype = {
   },
   prepareBody: function(body) { return body; },
   prepareHeaders: function(headers) { return headers; },
-  handledRequest: function(verb, path, request) { /* no-op */},
-  passthroughRequest: function(verb, path, request) { /* no-op */},
-  unhandledRequest: function(verb, path, request) {
-    throw new Error("Pretender intercepted "+verb+" "+path+" but no handler was defined for this type of request");
+  handledRequest: function(/* verb, path, request */) { /* no-op */},
+  passthroughRequest: function(/* verb, path, request */) { /* no-op */},
+  unhandledRequest: function(verb, path/*, request */) {
+    throw new Error('Pretender intercepted ' + verb + ' ' +
+      path + ' but no handler was defined for this type of request');
   },
-  erroredRequest: function(verb, path, request, error){
-    error.message = "Pretender intercepted "+verb+" "+path+" but encountered an error: " + error.message;
+  erroredRequest: function(verb, path, request, error) {
+    error.message = 'Pretender intercepted ' + verb + ' ' +
+      path + ' but encountered an error: ' + error.message;
     throw error;
   },
-  _handlerFor: function(verb, path, request){
-    var registry = this.registry[verb];
-    var matches = registry.recognize(path);
+  _handlerFor: function(verb, url, request) {
+    var registry = this.hosts.forURL(url)[verb];
+    var matches = registry.recognize(parseURL(url).fullpath);
 
     var match = matches ? matches[0] : null;
     if (match) {
@@ -13133,24 +13262,216 @@ Pretender.prototype = {
 
     return match;
   },
-  shutdown: function shutdown(){
-    window.XMLHttpRequest = this._nativeXMLHttpRequest;
+  shutdown: function shutdown() {
+    self.XMLHttpRequest = this._nativeXMLHttpRequest;
 
-    // "stop" the server
+    // 'stop' the server
     this.running = false;
   }
 };
 
-if (isNode) {
+Pretender.parseURL = parseURL;
+Pretender.Hosts = Hosts;
+Pretender.Registry = Registry;
+
+if (typeof module === 'object') {
   module.exports = Pretender;
-} else {
-  window.Pretender = Pretender;
+} else if (typeof define !== 'undefined') {
+  define('pretender', [], function() {
+    return Pretender;
+  });
+}
+self.Pretender = Pretender;
+}(self));
+
+}).call(this,require('_process'))
+},{"_process":5,"fake-xml-http-request":3,"route-recognizer":7}],5:[function(require,module,exports){
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
 }
 
-})(window);
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
 
-}).call(this,"/node_modules/pretender")
-},{"fake-xml-http-request":3,"route-recognizer":7}],5:[function(require,module,exports){
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],6:[function(require,module,exports){
 'use strict';
 var strictUriEncode = require('strict-uri-encode');
 
@@ -13210,15 +13531,7 @@ exports.stringify = function (obj) {
 	}).join('&') : '';
 };
 
-},{"strict-uri-encode":6}],6:[function(require,module,exports){
-'use strict';
-module.exports = function (str) {
-	return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
-		return '%' + c.charCodeAt(0).toString(16);
-	});
-};
-
-},{}],7:[function(require,module,exports){
+},{"strict-uri-encode":8}],7:[function(require,module,exports){
 (function() {
     "use strict";
     function $$route$recognizer$dsl$$Target(path, matcher, delegate) {
@@ -13284,7 +13597,7 @@ module.exports = function (str) {
 
     function $$route$recognizer$dsl$$addRoute(routeArray, path, handler) {
       var len = 0;
-      for (var i=0, l=routeArray.length; i<l; i++) {
+      for (var i=0; i<routeArray.length; i++) {
         len += routeArray[i].path.length;
       }
 
@@ -13351,13 +13664,15 @@ module.exports = function (str) {
 
     function $$route$recognizer$$StaticSegment(string) { this.string = string; }
     $$route$recognizer$$StaticSegment.prototype = {
-      eachChar: function(callback) {
+      eachChar: function(currentState) {
         var string = this.string, ch;
 
-        for (var i=0, l=string.length; i<l; i++) {
+        for (var i=0; i<string.length; i++) {
           ch = string.charAt(i);
-          callback({ validChars: ch });
+          currentState = currentState.put({ invalidChars: undefined, repeat: false, validChars: ch });
         }
+
+        return currentState;
       },
 
       regex: function() {
@@ -13371,8 +13686,8 @@ module.exports = function (str) {
 
     function $$route$recognizer$$DynamicSegment(name) { this.name = name; }
     $$route$recognizer$$DynamicSegment.prototype = {
-      eachChar: function(callback) {
-        callback({ invalidChars: "/", repeat: true });
+      eachChar: function(currentState) {
+        return currentState.put({ invalidChars: "/", repeat: true, validChars: undefined });
       },
 
       regex: function() {
@@ -13386,8 +13701,8 @@ module.exports = function (str) {
 
     function $$route$recognizer$$StarSegment(name) { this.name = name; }
     $$route$recognizer$$StarSegment.prototype = {
-      eachChar: function(callback) {
-        callback({ invalidChars: "", repeat: true });
+      eachChar: function(currentState) {
+        return currentState.put({ invalidChars: "", repeat: true, validChars: undefined });
       },
 
       regex: function() {
@@ -13401,7 +13716,9 @@ module.exports = function (str) {
 
     function $$route$recognizer$$EpsilonSegment() {}
     $$route$recognizer$$EpsilonSegment.prototype = {
-      eachChar: function() {},
+      eachChar: function(currentState) {
+        return currentState;
+      },
       regex: function() { return ""; },
       generate: function() { return ""; }
     };
@@ -13411,7 +13728,8 @@ module.exports = function (str) {
       // also normalize.
       if (route.charAt(0) === "/") { route = route.substr(1); }
 
-      var segments = route.split("/"), results = [];
+      var segments = route.split("/");
+      var results = new Array(segments.length);
 
       // A routes has specificity determined by the order that its different segments
       // appear in. This system mirrors how the magnitude of numbers written as strings
@@ -13434,22 +13752,22 @@ module.exports = function (str) {
       // we convert the string to a number.
       specificity.val = '';
 
-      for (var i=0, l=segments.length; i<l; i++) {
+      for (var i=0; i<segments.length; i++) {
         var segment = segments[i], match;
 
         if (match = segment.match(/^:([^\/]+)$/)) {
-          results.push(new $$route$recognizer$$DynamicSegment(match[1]));
+          results[i] = new $$route$recognizer$$DynamicSegment(match[1]);
           names.push(match[1]);
           specificity.val += '3';
         } else if (match = segment.match(/^\*([^\/]+)$/)) {
-          results.push(new $$route$recognizer$$StarSegment(match[1]));
-          specificity.val += '2';
+          results[i] = new $$route$recognizer$$StarSegment(match[1]);
+          specificity.val += '1';
           names.push(match[1]);
         } else if(segment === "") {
-          results.push(new $$route$recognizer$$EpsilonSegment());
-          specificity.val += '1';
+          results[i] = new $$route$recognizer$$EpsilonSegment();
+          specificity.val += '2';
         } else {
-          results.push(new $$route$recognizer$$StaticSegment(segment));
+          results[i] = new $$route$recognizer$$StaticSegment(segment);
           specificity.val += '4';
         }
       }
@@ -13479,19 +13797,30 @@ module.exports = function (str) {
     function $$route$recognizer$$State(charSpec) {
       this.charSpec = charSpec;
       this.nextStates = [];
+      this.charSpecs = {};
+      this.regex = undefined;
+      this.handlers = undefined;
+      this.specificity = undefined;
     }
 
     $$route$recognizer$$State.prototype = {
       get: function(charSpec) {
+        if (this.charSpecs[charSpec.validChars]) {
+          return this.charSpecs[charSpec.validChars];
+        }
+
         var nextStates = this.nextStates;
 
-        for (var i=0, l=nextStates.length; i<l; i++) {
+        for (var i=0; i<nextStates.length; i++) {
           var child = nextStates[i];
 
           var isEqual = child.charSpec.validChars === charSpec.validChars;
           isEqual = isEqual && child.charSpec.invalidChars === charSpec.invalidChars;
 
-          if (isEqual) { return child; }
+          if (isEqual) {
+            this.charSpecs[charSpec.validChars] = child;
+            return child;
+          }
         }
       },
 
@@ -13521,14 +13850,12 @@ module.exports = function (str) {
 
       // Find a list of child states matching the next character
       match: function(ch) {
-        // DEBUG "Processing `" + ch + "`:"
         var nextStates = this.nextStates,
             child, charSpec, chars;
 
-        // DEBUG "  " + debugState(this)
         var returned = [];
 
-        for (var i=0, l=nextStates.length; i<l; i++) {
+        for (var i=0; i<nextStates.length; i++) {
           child = nextStates[i];
 
           charSpec = child.charSpec;
@@ -13542,36 +13869,7 @@ module.exports = function (str) {
 
         return returned;
       }
-
-      /** IF DEBUG
-      , debug: function() {
-        var charSpec = this.charSpec,
-            debug = "[",
-            chars = charSpec.validChars || charSpec.invalidChars;
-
-        if (charSpec.invalidChars) { debug += "^"; }
-        debug += chars;
-        debug += "]";
-
-        if (charSpec.repeat) { debug += "+"; }
-
-        return debug;
-      }
-      END IF **/
     };
-
-    /** IF DEBUG
-    function debug(log) {
-      console.log(log);
-    }
-
-    function debugState(state) {
-      return state.nextStates.map(function(n) {
-        if (n.nextStates.length === 0) { return "( " + n.debug() + " [accepting] )"; }
-        return "( " + n.debug() + " <then> " + n.nextStates.map(function(s) { return s.debug() }).join(" or ") + " )";
-      }).join(", ")
-    }
-    END IF **/
 
     // Sort the routes by specificity
     function $$route$recognizer$$sortSolutions(states) {
@@ -13614,33 +13912,29 @@ module.exports = function (str) {
       var captures = path.match(regex), currentCapture = 1;
       var result = new $$route$recognizer$$RecognizeResults(queryParams);
 
-      for (var i=0, l=handlers.length; i<l; i++) {
+      result.length = handlers.length;
+
+      for (var i=0; i<handlers.length; i++) {
         var handler = handlers[i], names = handler.names, params = {};
 
-        for (var j=0, m=names.length; j<m; j++) {
+        for (var j=0; j<names.length; j++) {
           params[names[j]] = captures[currentCapture++];
         }
 
-        result.push({ handler: handler.handler, params: params, isDynamic: !!names.length });
+        result[i] = { handler: handler.handler, params: params, isDynamic: !!names.length };
       }
 
       return result;
     }
 
-    function $$route$recognizer$$addSegment(currentState, segment) {
-      segment.eachChar(function(ch) {
-        var state;
-
-        currentState = currentState.put(ch);
-      });
-
-      return currentState;
-    }
-
     function $$route$recognizer$$decodeQueryParamPart(part) {
       // http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1
       part = part.replace(/\+/gm, '%20');
-      return decodeURIComponent(part);
+      var result;
+      try {
+        result = decodeURIComponent(part);
+      } catch(error) {result = '';}
+      return result;
     }
 
     // The main interface
@@ -13655,18 +13949,18 @@ module.exports = function (str) {
       add: function(routes, options) {
         var currentState = this.rootState, regex = "^",
             specificity = {},
-            handlers = [], allSegments = [], name;
+            handlers = new Array(routes.length), allSegments = [], name;
 
         var isEmpty = true;
 
-        for (var i=0, l=routes.length; i<l; i++) {
+        for (var i=0; i<routes.length; i++) {
           var route = routes[i], names = [];
 
           var segments = $$route$recognizer$$parse(route.path, names, specificity);
 
           allSegments = allSegments.concat(segments);
 
-          for (var j=0, m=segments.length; j<m; j++) {
+          for (var j=0; j<segments.length; j++) {
             var segment = segments[j];
 
             if (segment instanceof $$route$recognizer$$EpsilonSegment) { continue; }
@@ -13674,20 +13968,19 @@ module.exports = function (str) {
             isEmpty = false;
 
             // Add a "/" for the new segment
-            currentState = currentState.put({ validChars: "/" });
+            currentState = currentState.put({ invalidChars: undefined, repeat: false, validChars: "/" });
             regex += "/";
 
             // Add a representation of the segment to the NFA and regex
-            currentState = $$route$recognizer$$addSegment(currentState, segment);
+            currentState = segment.eachChar(currentState);
             regex += segment.regex();
           }
-
           var handler = { handler: route.handler, names: names };
-          handlers.push(handler);
+          handlers[i] = handler;
         }
 
         if (isEmpty) {
-          currentState = currentState.put({ validChars: "/" });
+          currentState = currentState.put({ invalidChars: undefined, repeat: false, validChars: "/" });
           regex += "/";
         }
 
@@ -13704,11 +13997,14 @@ module.exports = function (str) {
       },
 
       handlersFor: function(name) {
-        var route = this.names[name], result = [];
+        var route = this.names[name];
+
         if (!route) { throw new Error("There is no route named " + name); }
 
-        for (var i=0, l=route.handlers.length; i<l; i++) {
-          result.push(route.handlers[i]);
+        var result = new Array(route.handlers.length);
+
+        for (var i=0; i<route.handlers.length; i++) {
+          result[i] = route.handlers[i];
         }
 
         return result;
@@ -13724,7 +14020,7 @@ module.exports = function (str) {
 
         var segments = route.segments;
 
-        for (var i=0, l=segments.length; i<l; i++) {
+        for (var i=0; i<segments.length; i++) {
           var segment = segments[i];
 
           if (segment instanceof $$route$recognizer$$EpsilonSegment) { continue; }
@@ -13751,7 +14047,7 @@ module.exports = function (str) {
           }
         }
         keys.sort();
-        for (var i = 0, len = keys.length; i < len; i++) {
+        for (var i = 0; i < keys.length; i++) {
           key = keys[i];
           var value = params[key];
           if (value == null) {
@@ -13759,7 +14055,7 @@ module.exports = function (str) {
           }
           var pair = encodeURIComponent(key);
           if ($$route$recognizer$$isArray(value)) {
-            for (var j = 0, l = value.length; j < l; j++) {
+            for (var j = 0; j < value.length; j++) {
               var arrayPair = key + '[]' + '=' + encodeURIComponent(value[j]);
               pairs.push(arrayPair);
             }
@@ -13818,8 +14114,6 @@ module.exports = function (str) {
 
         path = decodeURI(path);
 
-        // DEBUG GROUP path
-
         if (path.charAt(0) !== "/") { path = "/" + path; }
 
         pathLen = path.length;
@@ -13828,15 +14122,13 @@ module.exports = function (str) {
           isSlashDropped = true;
         }
 
-        for (i=0, l=path.length; i<l; i++) {
+        for (i=0; i<path.length; i++) {
           states = $$route$recognizer$$recognizeChar(states, path.charAt(i));
           if (!states.length) { break; }
         }
 
-        // END DEBUG GROUP
-
         var solutions = [];
-        for (i=0, l=states.length; i<l; i++) {
+        for (i=0; i<states.length; i++) {
           if (states[i].handlers) { solutions.push(states[i]); }
         }
 
@@ -13857,7 +14149,7 @@ module.exports = function (str) {
 
     $$route$recognizer$$RouteRecognizer.prototype.map = $$route$recognizer$dsl$$default;
 
-    $$route$recognizer$$RouteRecognizer.VERSION = '0.1.9';
+    $$route$recognizer$$RouteRecognizer.VERSION = '0.1.11';
 
     var $$route$recognizer$$default = $$route$recognizer$$RouteRecognizer;
 
@@ -13873,6 +14165,14 @@ module.exports = function (str) {
 
 
 },{}],8:[function(require,module,exports){
+'use strict';
+module.exports = function (str) {
+	return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
+		return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+	});
+};
+
+},{}],9:[function(require,module,exports){
 'use strict';
 
 /**
@@ -13949,7 +14249,6 @@ var stubbyFactory = function(deps) {
   Stubby.prototype.stubMatchesRequest = function(stub, request) {
     var queryParams = request.queryParams;
     var method = request.method;
-    var data = request.data;
 
     this.emit('setup', stub, request);
 
@@ -13977,9 +14276,22 @@ var stubbyFactory = function(deps) {
 
     var dataRequestMatch;
 
+    var stubbedRequestData = stub.request.data;
+    var requestData = request.data;
+
     // if no stub data was given, we just say that we matched
-    if (!_.isEmpty(stub.request.data)) {
-      dataRequestMatch = _.isEqual(stub.request.data, data);
+    if (!_.isEmpty(stubbedRequestData)) {
+      // if the data is a string we assume it is JSON string
+      if (typeof requestData === 'string') {
+        try {
+          var parsedRequestData = JSON.parse(requestData);
+          dataRequestMatch = _.isEqual(stubbedRequestData, parsedRequestData);
+        } catch (e) {
+          dataRequestMatch = _.isEqual(stubbedRequestData, requestData);
+        }
+      } else {
+        dataRequestMatch = _.isEqual(stubbedRequestData, requestData);
+      }
     } else {
       dataRequestMatch = true;
     }
@@ -14192,7 +14504,6 @@ if (typeof module === 'undefined') {
 } else {
   module.exports = stubbyFactory;
 }
-
 
 },{}]},{},[1])(1)
 });
