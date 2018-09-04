@@ -4,7 +4,7 @@
 # Stubby
 
 ## Continuous Integration
- Currently this project is tested in Circle CI v1 which is past it's sunset and could be switched off at any time. There are currently no plans to migrate this project as no major changes are being made, and no plans to support this longer term. If you plan on making major changes to this project we recommend you migrate it to use Circle CI V2 first.
+ Currently this project is tested in Circle CI v1 which is past it's sunset and could be switched off at any time. There are currently no plans to migrate this project as no major changes are being made, and no plans to support this longer term. If you plan on making major changes to this project we recommend you [migrate it to use Circle CI V2](https://circleci.com/docs/2.0/migrating-from-1-2/) first.
 
 ### AJAX Testing Stub Library
 
