@@ -39,7 +39,7 @@ var stubbyFactory = function(deps) {
   };
 
   Stubby.prototype.on = function(name, handler, thisArg) {
-    if (this.events.whitelist && !_.contains(this.events.whitelist, name)) {
+    if (this.events.whitelist && !_.includes(this.events.whitelist, name)) {
       throw new Error('"' + name + '" is not a valid event handler');
     }
     this.events.handlers[name] = this.events.handlers[name] || [];
@@ -68,7 +68,7 @@ var stubbyFactory = function(deps) {
         requestHeaders: req.requestHeaders,
         queryParams: req.queryParams
       });
-    }, this);
+    }.bind(this));
   };
 
   Stubby.prototype.stubMatchesRequest = function(stub, request) {
