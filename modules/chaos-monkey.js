@@ -16,9 +16,6 @@ var StubbyChaosMonkey = function() {
   };
 
   this.register = function(handler) {
-    // Request is empty on route setup.
-    handler.on('setup', this.onRequestSetup, this);
-
     // Called before a request and response are matched
     handler.on('routesetup', this.onRouteSetup, this);
 
@@ -33,10 +30,6 @@ var StubbyChaosMonkey = function() {
     if (stub.response.status !== 43) {
       throw new Error('Response status needs to be `43` for a valid chaos response');
     }
-  };
-
-  this.onRequestSetup = function() {
-    // console.log('[requestsetup] ', request, stub);
   };
 
   this.onRequestExecute = function(request, stub) {
