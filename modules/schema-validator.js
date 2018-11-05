@@ -78,15 +78,13 @@ var stubbySchemaValidatorModule = function(deps) {
 
     this.getSchemaForRoute = function(stub, routeRef) {
       return _.find(this.hyperschemaUrls[routeRef], function(schema) {
-        if (schema.method === stub.request.method) {
-          return true;
-        }
+        return schema.method === stub.request.method;
       });
     };
 
     this.validateRequestSchema = function(stub, request, schema) {
       var keyTraverse = _.find(Object.keys(request.data), function(key) {
-        return (stub.url.indexOf(key) !== -1);
+        return stub.url.indexOf(key) !== -1;
       });
       var requestData = request.data;
       if (keyTraverse) {

@@ -26,10 +26,10 @@ document.createElement = jest.fn().mockImplementation((tagName) => {
         this.hash = url.hash;
         this.fullpath = path;
       }
-    }
+    };
   }
   return originalDocumentCreateElement(tagName);
-})
+});
 
 const Pretender = require('pretender');
 
