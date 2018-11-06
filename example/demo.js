@@ -1,3 +1,4 @@
+/* global Stubby */
 'use strict';
 
 var stubby = new Stubby();
@@ -14,7 +15,7 @@ stubby.stub({
 }).respondWith(404, {error: 'Item not Found'});
 
 stubby.stub({
- url: '/widget?id=2', method: 'POST'
+  url: '/widget?id=2', method: 'POST'
 }).respondWith(200, {message: 'Shiny :)'});
 
 stubby.stub({

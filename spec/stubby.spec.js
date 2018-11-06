@@ -117,9 +117,9 @@ describe('create stubby', () => {
         .respondWith(
           200,
           { a: 1 },
-        {
-          headers: { foo: 'bar' }
-        }
+          {
+            headers: { foo: 'bar' }
+          }
         );
 
       global.get(
