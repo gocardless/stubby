@@ -57,7 +57,7 @@
     "browserify": "^16.2.3",
     "eslint": "^6.0.1",
     "fake-xml-http-request": "^2.0.0",
-    "jest": "^24.8.0",
+    "jest": "^26.1.0",
     "uglifyjs": "^2.4.10",
     "url-parse": "^1.4.1"
   },
